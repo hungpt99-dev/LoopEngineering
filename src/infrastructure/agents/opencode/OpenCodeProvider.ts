@@ -20,7 +20,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
 
   static killActiveProcess(): void {
     if (OpenCodeProvider.activeProcess) {
-      OpenCodeProvider.activeProcess.kill();
+      OpenCodeProvider.activeProcess.kill('SIGKILL');
       OpenCodeProvider.activeProcess = null;
     }
   }

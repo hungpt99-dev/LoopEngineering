@@ -51,7 +51,7 @@ export function createRunCommand(): Command {
         process.on('SIGTERM', () => shutdown(engine));
 
         console.log(chalk.gray('Starting workflow engine...'));
-        console.log(chalk.gray('Press Ctrl+C to stop'));
+        console.log(chalk.yellow('Press Ctrl+C once to stop gracefully, twice to force exit'));
         console.log('');
 
         await engine.runAutonomous();
