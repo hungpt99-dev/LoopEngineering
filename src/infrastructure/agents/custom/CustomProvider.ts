@@ -5,11 +5,6 @@ import { AgentTask } from '../../../domain/entities/AgentTask.js';
 import { AgentExecutionResult } from '../../../domain/entities/AgentExecutionResult.js';
 import { Logger, LOGGER } from '../../../domain/interfaces/Logger.js';
 
-export interface CustomProviderOptions {
-  command?: string;
-  args?: string[];
-}
-
 @injectable()
 export class CustomProvider implements CodingAgentProvider {
   readonly name = 'custom';
@@ -20,18 +15,11 @@ export class CustomProvider implements CodingAgentProvider {
 
   constructor(
     @inject(LOGGER) private readonly logger: Logger,
-    options?: CustomProviderOptions,
   ) {
-    this.command =
-      options?.command ??
-      process.env.CUSTOM_AGENT_COMMAND ??
-      '';
-
-    this.args =
-      options?.args ??
-      (process.env.CUSTOM_AGENT_ARGS
-        ? process.env.CUSTOM_AGENT_ARGS.split(',').map((a) => a.trim()).filter((a) => a.length > 0)
-        : []);
+    this.command = process.env.CUSTOM_AGENT_COMMAND ?? '';
+    this.args = process.env.CUSTOM_AGENT_ARGS
+      ? process.env.CUSTOM_AGENT_ARGS.split(',').map((a) => a.trim()).filter((a) => a.length > 0)
+      : [];
   }
 
   async execute(task: AgentTask): Promise<AgentExecutionResult> {
