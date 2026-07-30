@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import type { IssueRepository } from '../../domain/interfaces/IssueRepository.js';
 import { ISSUE_REPOSITORY } from '../../domain/interfaces/IssueRepository.js';
 import type { CodingAgentProvider } from '../../domain/interfaces/CodingAgentProvider.js';
-import { CODING_AGENT_PROVIDER } from '../../domain/interfaces/CodingAgentProvider.js';
 import type { GitRepository } from '../../domain/interfaces/GitRepository.js';
 import { GIT_REPOSITORY } from '../../domain/interfaces/GitRepository.js';
 import type { TestRunner } from '../../domain/interfaces/TestRunner.js';
@@ -20,6 +19,7 @@ import type { AppConfig } from '../../domain/interfaces/AppConfig.js';
 import { APP_CONFIG } from '../../domain/interfaces/AppConfig.js';
 import type { ContextBuilder } from '../../domain/interfaces/ContextBuilder.js';
 import { CONTEXT_BUILDER } from '../../domain/interfaces/ContextBuilder.js';
+import { AgentRegistry, AGENT_REGISTRY } from '../../infrastructure/agents/AgentRegistry.js';
 import { ExecutionHistory } from '../../domain/entities/ExecutionHistory.js';
 import { AgentTask } from '../../domain/entities/AgentTask.js';
 import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
@@ -28,7 +28,7 @@ import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
 export class ExecuteIssue {
   constructor(
     @inject(ISSUE_REPOSITORY) private readonly issueRepo: IssueRepository,
-    @inject(CODING_AGENT_PROVIDER) private readonly codingAgent: CodingAgentProvider,
+    @inject(AGENT_REGISTRY) private readonly agentRegistry: AgentRegistry,
     @inject(GIT_REPOSITORY) private readonly git: GitRepository,
     @inject(TEST_RUNNER) private readonly testRunner: TestRunner,
     @inject(PLANNER_SERVICE) private readonly planner: PlannerService,
@@ -94,7 +94,15 @@ export class ExecuteIssue {
         environment: {},
       });
 
-      const agentResult = await this.codingAgent.execute(task);
+      const selectedAgent = await this.resolveAgent(agentName);
+      this.logger.info('Selected agent for execution', {
+        issueId,
+        planned: agentName,
+        actual: selectedAgent.name,
+        available: await selectedAgent.isAvailable(),
+      });
+
+      const agentResult = await selectedAgent.execute(task);
       if (!agentResult.success) {
         throw new Error(`Agent execution failed: ${agentResult.error ?? 'Unknown error'}`);
       }
@@ -150,7 +158,7 @@ export class ExecuteIssue {
           environment: {},
         });
 
-        const retryResult = await this.codingAgent.execute(retryTask);
+        const retryResult = await selectedAgent.execute(retryTask);
         await this.store.addRetry(execution.id, {
           attempt,
           status: retryResult.success ? 'passed' : 'failed',
@@ -236,6 +244,28 @@ export class ExecuteIssue {
 
       return execution;
     }
+  }
+
+  private async resolveAgent(preferredName: string): Promise<CodingAgentProvider> {
+    const provider = this.agentRegistry.getProvider(preferredName);
+
+    if (provider && (await provider.isAvailable())) {
+      return provider;
+    }
+
+    if (provider) {
+      this.logger.warn(`Preferred agent '${preferredName}' is not available, falling back`, { preferredName });
+    } else {
+      this.logger.warn(`Preferred agent '${preferredName}' not found, falling back`, { preferredName });
+    }
+
+    const available = await this.agentRegistry.getAvailableProviders();
+    if (available.length > 0) {
+      this.logger.info(`Falling back to available agent`, { agent: available[0]!.name });
+      return available[0]!;
+    }
+
+    throw new Error(`No coding agents available. Tried '${preferredName}' but no fallback found.`);
   }
 
   private buildBranchName(issueId: string): string {
