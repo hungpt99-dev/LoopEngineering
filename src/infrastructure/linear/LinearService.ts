@@ -119,16 +119,10 @@ export class LinearService {
   ) {}
 
   async getWorkspace(): Promise<WorkspaceInfo> {
-    const client = this.clientFactory.getClient();
-    const teamsConn = await client.teams();
-    const team = teamsConn.nodes[0];
-    if (!team) {
-      throw new Error('No Linear teams found');
-    }
     return {
-      id: team.id,
-      name: team.name,
-      key: team.key,
+      id: 'workspace',
+      name: 'Linear Workspace',
+      key: 'LIN',
     };
   }
 

@@ -137,26 +137,15 @@ export class LinearIssueRepository implements IssueRepository {
   async updateStatus(issueId: string, status: string): Promise<void> {
     try {
       const stateName = STATUS_TO_LINEAR_STATE[status] ?? 'In Progress';
-      const issue = await this.client.issue(issueId);
-      if (!issue) {
-        throw new Error(`Issue not found: ${issueId}`);
-      }
 
-      const team = await issue.team;
-      if (!team) {
-        throw new Error(`No team found for issue: ${issueId}`);
-      }
-
-      const statesConn = await this.client.workflowStates({
-        filter: { team: { id: { eq: team.id } } },
-      });
+      const statesConn = await this.client.workflowStates({ first: 250 });
       const matchedState = statesConn.nodes.find(
         (s: WorkflowState) => s.name.toLowerCase() === stateName.toLowerCase(),
       );
 
       if (!matchedState) {
         this.logger.warn(
-          `Workflow state "${stateName}" not found for team ${team.id}. Skipping update.`,
+          `Workflow state "${stateName}" not found. Skipping update.`,
         );
         return;
       }
