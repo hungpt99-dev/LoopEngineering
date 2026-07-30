@@ -1,0 +1,21 @@
+services:
+  ai-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: loop-engineering:latest
+    container_name: ai-dev
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=file:/data/loop-engineering.db
+    volumes:
+      - ./data:/data
+      - ./config:/app/config:ro
+      - ${PWD:-.}:/workspace
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    profiles:
+      - default
+      - dev

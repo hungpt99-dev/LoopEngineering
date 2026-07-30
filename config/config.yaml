@@ -1,0 +1,38 @@
+agents:
+  opencode:
+    enabled: true
+    priority: 1
+    capabilities:
+      - full-stack
+      - refactoring
+      - architecture
+  claude:
+    enabled: true
+    priority: 2
+    capabilities:
+      - frontend
+      - react
+      - design
+      - architecture
+  codex:
+    enabled: true
+    priority: 3
+    capabilities:
+      - simple-bug
+      - quick-fix
+      - documentation
+
+execution:
+  maxRetries: 3
+  autoCommit: true
+  autoPush: false
+  dryRun: false
+  parallel: false
+
+review:
+  autoApproveTestsPassing: false
+  createIssuesForChanges: true
+
+workspace:
+  defaultBranch: main
+  branchPrefix: ai/

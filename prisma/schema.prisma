@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ExecutionRecord {
+  id         String   @id @default(cuid())
+  issueId    String
+  issueTitle String
+  projectId  String?
+  milestoneId String?
+  agentUsed  String
+  status     String
+  duration   Int?
+  tokenUsage Int?
+  result     String?
+  error      String?
+  branch     String?
+  commit     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  retries ExecutionRetry[]
+}
+
+model ExecutionRetry {
+  id          String   @id @default(cuid())
+  recordId    String
+  record      ExecutionRecord @relation(fields: [recordId], references: [id])
+  attempt     Int
+  status      String
+  duration    Int?
+  error       String?
+  createdAt   DateTime @default(now())
+
+  @@index([recordId])
+}
+
+model AgentConfig {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  enabled     Boolean  @default(true)
+  priority    Int      @default(0)
+  capabilities String  @default("[]")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
