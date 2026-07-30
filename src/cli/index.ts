@@ -1,5 +1,11 @@
 import 'reflect-metadata';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const projectRoot = join(__dirname, '..');
+dotenv.config({ path: join(projectRoot, '.env') });
 dotenv.config();
 
 import { Command } from 'commander';
