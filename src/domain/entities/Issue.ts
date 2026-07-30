@@ -13,6 +13,7 @@ export interface IssueProps {
   milestoneName?: string;
   assigneeId?: string;
   labelIds: string[];
+  labelNames: string[];
   parentId?: string;
   blockedByIssues: string[];
   blockingIssues: string[];
@@ -35,6 +36,7 @@ export const IssueSchema = z.object({
   milestoneName: z.string().optional(),
   assigneeId: z.string().optional(),
   labelIds: z.array(z.string()),
+  labelNames: z.array(z.string()),
   parentId: z.string().optional(),
   blockedByIssues: z.array(z.string()),
   blockingIssues: z.array(z.string()),
@@ -64,6 +66,7 @@ export class Issue {
   get milestoneName(): string | undefined { return this.props.milestoneName; }
   get assigneeId(): string | undefined { return this.props.assigneeId; }
   get labelIds(): string[] { return this.props.labelIds; }
+  get labelNames(): string[] { return this.props.labelNames; }
   get parentId(): string | undefined { return this.props.parentId; }
   get blockedByIssues(): string[] { return this.props.blockedByIssues; }
   get blockingIssues(): string[] { return this.props.blockingIssues; }

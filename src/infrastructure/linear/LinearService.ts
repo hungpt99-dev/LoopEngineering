@@ -98,6 +98,7 @@ async function mapSdkIssue(raw: SdkIssue): Promise<Issue> {
     milestoneName: milestone?.name,
     assigneeId: assignee?.id,
     labelIds: raw.labelIds,
+    labelNames: [],
     parentId: parent?.id,
     blockedByIssues: blockedByIds.filter(Boolean),
     blockingIssues: blockingIds.filter(Boolean),

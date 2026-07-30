@@ -13,6 +13,7 @@ function createIssue(overrides: Partial<{ title: string; description: string }> 
     status: IssueStatus.CREATED,
     priority: Priority.MEDIUM,
     labelIds: [],
+    labelNames: [],
     blockedByIssues: [],
     blockingIssues: [],
     createdAt: new Date(),

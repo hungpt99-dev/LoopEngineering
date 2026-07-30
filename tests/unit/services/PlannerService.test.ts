@@ -11,6 +11,7 @@ function createIssue(overrides: Partial<{
   estimate?: number;
   blockedByIssues: string[];
   labelIds: string[];
+  labelNames: string[];
   parentId?: string;
   dueDate?: Date;
 }> = {}) {
@@ -21,6 +22,7 @@ function createIssue(overrides: Partial<{
     status: IssueStatus.CREATED,
     priority: Priority.MEDIUM,
     labelIds: overrides.labelIds ?? [],
+    labelNames: overrides.labelNames ?? [],
     blockedByIssues: overrides.blockedByIssues ?? [],
     blockingIssues: [],
     estimate: overrides.estimate,

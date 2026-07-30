@@ -14,6 +14,7 @@ const baseProps = {
   milestoneName: 'Sprint 1',
   assigneeId: 'user-1',
   labelIds: ['bug', 'high-priority'],
+  labelNames: ['Bug', 'High Priority'],
   parentId: undefined,
   blockedByIssues: [],
   blockingIssues: [],
@@ -60,6 +61,7 @@ describe('Issue', () => {
       expect(issue.milestoneName).toBe('Sprint 1');
       expect(issue.assigneeId).toBe('user-1');
       expect(issue.labelIds).toEqual(['bug', 'high-priority']);
+      expect(issue.labelNames).toEqual(['Bug', 'High Priority']);
       expect(issue.parentId).toBeUndefined();
       expect(issue.blockedByIssues).toEqual([]);
       expect(issue.blockingIssues).toEqual([]);

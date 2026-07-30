@@ -63,7 +63,8 @@ export class SelectNextIssue {
     }
 
     if (issue.labelIds.length > 0) {
-      parts.push(`Labels: ${issue.labelIds.join(', ')}`);
+      const names = issue.labelNames.length > 0 ? issue.labelNames : issue.labelIds;
+      parts.push(`Labels: ${names.join(', ')}`);
     }
 
     if (issue.isBlocked) {
