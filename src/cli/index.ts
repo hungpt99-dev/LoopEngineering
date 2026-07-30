@@ -4,7 +4,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const projectRoot = join(__dirname, '..');
+const projectRoot = join(__dirname, '..', '..');
 dotenv.config({ path: join(projectRoot, '.env') });
 dotenv.config();
 
