@@ -361,8 +361,7 @@ export class LinearIssueRepository implements IssueRepository {
   }
 
   private async mapProject(raw: SdkProject): Promise<Project> {
-    const teamsConn = await raw.teams();
-    const teamId = teamsConn?.nodes?.[0]?.id ?? '';
+    const teamId = '';
 
     const milestonesConn = await raw.projectMilestones();
     const milestoneIds = milestonesConn?.nodes?.map((m) => m.id) ?? [];
