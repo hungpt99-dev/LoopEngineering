@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { injectable } from 'tsyringe';
 import yaml from 'yaml';
 import { z } from 'zod';
@@ -116,10 +117,12 @@ function mergeEnvOverrides(config: AppConfigInterface): AppConfigInterface {
   };
 }
 
+const PROJECT_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
 @injectable()
 export class ConfigLoader {
   load(): AppConfigInterface {
-    const configPath = process.env.CONFIG_PATH ?? resolve(process.cwd(), 'config', 'config.yaml');
+    const configPath = process.env.CONFIG_PATH ?? join(PROJECT_ROOT, 'config', 'config.yaml');
 
     let fileConfig: Record<string, unknown> = {};
 
