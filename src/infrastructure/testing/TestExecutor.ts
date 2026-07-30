@@ -156,23 +156,25 @@ export class TestExecutor implements TestRunner {
 
   private parseErrors(output: string): string[] {
     const errors: string[] = [];
-    const lines = output.split('\n');
+    const stripped = output.replace(/\u001b\[[0-9;]*m/g, '');
+    const lines = stripped.split('\n');
 
-    for (let i = 0; i < lines.length; i++) {
+    for (let i = 0; i < lines.length && errors.length < 50; i++) {
       const line = lines[i]!;
       if (
         line.includes('FAIL') ||
         line.includes('Error:') ||
         line.includes('AssertionError:') ||
         line.includes('Expected') ||
-        line.match(/^\s+×\s+/)
+        line.match(/^\s+[×✕]\s+/)
       ) {
-        errors.push(line.trim());
+        errors.push(line.trim().slice(0, 200));
       }
     }
 
-    if (errors.length === 0 && output.trim()) {
-      errors.push(output.trim().split('\n').slice(0, 3).join('\n'));
+    if (errors.length === 0 && stripped.trim()) {
+      const head = stripped.trim().split('\n').slice(0, 5).join('\n');
+      errors.push(head.slice(0, 500));
     }
 
     return errors;

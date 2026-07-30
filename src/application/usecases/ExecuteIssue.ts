@@ -144,22 +144,27 @@ export class ExecuteIssue {
         }
 
         this.logger.warn('Tests failed, retrying', { issueId, attempt, maxRetries: this.config.execution.maxRetries });
+
+        const failedTests = testResult.errors.slice(0, 15);
+        const errorSummary = failedTests.join('\n');
+        const remaining = testResult.errors.length - failedTests.length;
+
         await this.issueRepo.addComment(
           issueId,
-          `Tests failed on attempt ${attempt}/${this.config.execution.maxRetries}:\n\`\`\`\n${testResult.formattedSummary}\n\`\`\`\nRetrying...`,
+          `Tests failed on attempt ${attempt}/${this.config.execution.maxRetries}: ${testResult.errors.length} failures\n\n\`\`\`\n${errorSummary}${remaining > 0 ? `\n\n... and ${remaining} more` : ''}\n\`\`\`\nRetrying...`,
         );
 
-        const retryFeedback = `The previous implementation failed tests. Fix the following issues:\n\n${testResult.formattedSummary}\n\nOriginal task: ${task.fullContext}`;
+        const retryFeedback = `Fix these test failures (attempt ${attempt}/${this.config.execution.maxRetries}):\n\n${errorSummary}${remaining > 0 ? `\n\n... and ${remaining} more failures (not shown)` : ''}`;
 
         const retryTask = AgentTask.create({
           id: randomUUID(),
           issueId: issue.id,
           issueTitle: `[RETRY #${attempt}] ${issue.title}`,
           issueDescription: retryFeedback,
-          projectContext: fullContext,
+          projectContext: task.projectContext,
           milestoneContext: undefined,
           dependencies: plan.dependencies,
-          filesToInspect: testResult.errors.length > 0 ? agentResult.filesChanged : plan.filesToInspect,
+          filesToInspect: agentResult.filesChanged,
           implementationSteps: [],
           complexity: plan.complexity,
           branchName,
