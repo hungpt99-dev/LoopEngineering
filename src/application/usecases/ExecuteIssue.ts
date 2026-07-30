@@ -102,10 +102,18 @@ export class ExecuteIssue {
         available: await selectedAgent.isAvailable(),
       });
 
+      this.logger.info(`Running agent '${selectedAgent.name}'... (this may take several minutes)`, { issueId });
+
       const agentResult = await selectedAgent.execute(task);
       if (!agentResult.success) {
         throw new Error(`Agent execution failed: ${agentResult.error ?? 'Unknown error'}`);
       }
+
+      this.logger.info(`Agent execution complete`, {
+        issueId,
+        duration: agentResult.duration,
+        filesChanged: agentResult.filesChanged.length,
+      });
 
       if (this.config.execution.autoCommit) {
         await this.git.stageAll();
@@ -269,9 +277,8 @@ export class ExecuteIssue {
   }
 
   private buildBranchName(issueId: string): string {
-    const prefix = this.config.workspace.branchPrefix;
     const sanitized = issueId.replace(/[^a-zA-Z0-9\-_]/g, '-');
-    return `${prefix}${sanitized}`;
+    return sanitized;
   }
 
   private buildAgentInfoList(): AgentInfo[] {

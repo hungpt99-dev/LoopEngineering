@@ -29,9 +29,12 @@ export class OpenCodeProvider implements CodingAgentProvider {
     });
 
     try {
-      const { stdout } = await execa('opencode', ['run', prompt], {
+      const { stdout } = await execa('opencode', ['run', prompt, '--print-logs'], {
         cwd: process.cwd(),
         timeout: 3_600_000,
+        stdin: 'ignore',
+        stderr: 'inherit',
+        env: { ...process.env, CI: 'true' },
       });
 
       const duration = Math.round(performance.now() - startTime);
