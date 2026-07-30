@@ -5,7 +5,7 @@
   "private": true,
   "type": "module",
   "bin": {
-    "ai-dev": "./dist/cli/index.js"
+    "ai-dev": "./dist/bin.js"
   },
   "scripts": {
     "build": "tsc",
