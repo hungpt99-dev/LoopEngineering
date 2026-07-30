@@ -1,5 +1,5 @@
 import { injectable, inject } from 'tsyringe';
-import { execa } from 'execa';
+import { execa, type ResultPromise } from 'execa';
 import { CodingAgentProvider } from '../../../domain/interfaces/CodingAgentProvider.js';
 import { AgentTask } from '../../../domain/entities/AgentTask.js';
 import { AgentExecutionResult } from '../../../domain/entities/AgentExecutionResult.js';
@@ -16,6 +16,15 @@ export class OpenCodeProvider implements CodingAgentProvider {
     'testing',
   ];
 
+  private static activeProcess: ResultPromise | null = null;
+
+  static killActiveProcess(): void {
+    if (OpenCodeProvider.activeProcess) {
+      OpenCodeProvider.activeProcess.kill();
+      OpenCodeProvider.activeProcess = null;
+    }
+  }
+
   constructor(@inject(LOGGER) private readonly logger: Logger) {}
 
   async execute(task: AgentTask): Promise<AgentExecutionResult> {
@@ -29,13 +38,19 @@ export class OpenCodeProvider implements CodingAgentProvider {
     });
 
     try {
-      const { stdout } = await execa('opencode', ['run', prompt, '--print-logs'], {
+      const child = execa('opencode', ['run', prompt, '--print-logs'], {
         cwd: process.cwd(),
         timeout: 3_600_000,
         stdin: 'ignore',
         stderr: 'inherit',
         env: { ...process.env, CI: 'true' },
       });
+
+      OpenCodeProvider.activeProcess = child;
+
+      const { stdout } = await child;
+
+      OpenCodeProvider.activeProcess = null;
 
       const duration = Math.round(performance.now() - startTime);
       const filesChanged = await this.getChangedFiles();
@@ -55,6 +70,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
         duration,
       });
     } catch (error: unknown) {
+      OpenCodeProvider.activeProcess = null;
       const duration = Math.round(performance.now() - startTime);
       const message =
         error instanceof Error ? error.message : 'Unknown error occurred';

@@ -3,6 +3,7 @@ import chalk from 'chalk';
 import { container } from 'tsyringe';
 import { WorkflowEngine } from '../../application/services/WorkflowEngine.js';
 import { ExecuteIssue } from '../../application/usecases/ExecuteIssue.js';
+import { OpenCodeProvider } from '../../infrastructure/agents/opencode/OpenCodeProvider.js';
 
 export function createRunCommand(): Command {
   const command = new Command('run')
@@ -22,6 +23,20 @@ export function createRunCommand(): Command {
 
       console.log('');
 
+      let forceStop = false;
+
+      const shutdown = async (engine: WorkflowEngine) => {
+        if (forceStop) {
+          console.log(chalk.red('\n\n🛑 Force stopping...'));
+          OpenCodeProvider.killActiveProcess();
+          process.exit(1);
+        }
+        console.log(chalk.yellow('\n\n⏸️  Stopping after current issue... (press Ctrl+C again to force stop)'));
+        OpenCodeProvider.killActiveProcess();
+        await engine.stop();
+        forceStop = true;
+      };
+
       try {
         const engine = container.resolve(WorkflowEngine);
         const executeIssue = container.resolve(ExecuteIssue);
@@ -32,6 +47,9 @@ export function createRunCommand(): Command {
           },
         });
 
+        process.on('SIGINT', () => shutdown(engine));
+        process.on('SIGTERM', () => shutdown(engine));
+
         console.log(chalk.gray('Starting workflow engine...'));
         console.log(chalk.gray('Press Ctrl+C to stop'));
         console.log('');
@@ -40,6 +58,7 @@ export function createRunCommand(): Command {
 
         console.log(chalk.green.bold('\n🏁 Workflow engine finished'));
         console.log('');
+        process.exit(0);
       } catch (error) {
         console.error(
           chalk.red('\n❌ Workflow engine failed:'),
