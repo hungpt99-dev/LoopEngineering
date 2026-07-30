@@ -29,7 +29,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
     });
 
     try {
-      const { stdout } = await execa('opencode', ['--task', prompt], {
+      const { stdout } = await execa('opencode', ['run', prompt], {
         cwd: process.cwd(),
         timeout: 3_600_000,
       });
