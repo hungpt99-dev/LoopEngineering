@@ -13,6 +13,8 @@ export interface AppConfig {
     autoPush: boolean;
     dryRun: boolean;
     parallel: boolean;
+    autoMerge: boolean;
+    deleteBranchAfterMerge: boolean;
   };
   review: {
     autoApproveTestsPassing: boolean;

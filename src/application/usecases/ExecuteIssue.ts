@@ -227,7 +227,37 @@ export class ExecuteIssue {
       // --- COMPLETED ---
       this.logger.info('Issue completed', { issueId });
       await this.issueRepo.updateStatus(issueId, IssueStatus.COMPLETED);
-      await this.issueRepo.addComment(issueId, 'Issue completed successfully.');
+
+      const completionMsgParts = ['Issue completed successfully.'];
+
+      if (this.config.execution.autoMerge) {
+        try {
+          this.logger.info('Merging branch', { branch: branchName });
+          await this.git.mergeToDefaultBranch(branchName);
+          completionMsgParts.push(`Merged \`${branchName}\` into \`${this.config.workspace.defaultBranch}\`.`);
+
+          if (this.config.execution.deleteBranchAfterMerge) {
+            try {
+              await this.git.deleteBranch(branchName);
+              completionMsgParts.push(`Deleted branch \`${branchName}\`.`);
+            } catch (delErr) {
+              this.logger.warn(`Failed to delete branch ${branchName}`, { error: String(delErr) });
+            }
+          }
+
+          if (this.config.execution.autoPush) {
+            await this.git.push();
+            completionMsgParts.push(`Pushed to remote.`);
+          }
+        } catch (mergeErr) {
+          const msg = mergeErr instanceof Error ? mergeErr.message : String(mergeErr);
+          this.logger.error('Merge failed', mergeErr as Error, { branch: branchName });
+          completionMsgParts.push(`Merge failed: ${msg}`);
+          throw mergeErr;
+        }
+      }
+
+      await this.issueRepo.addComment(issueId, completionMsgParts.join('\n'));
 
       execution = await this.store.update(execution.id, {
         status: IssueStatus.COMPLETED,

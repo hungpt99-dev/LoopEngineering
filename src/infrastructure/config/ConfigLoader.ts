@@ -23,6 +23,8 @@ const ExecutionConfigSchema = z.object({
   autoPush: z.boolean().default(false),
   dryRun: z.boolean().default(false),
   parallel: z.boolean().default(false),
+  autoMerge: z.boolean().default(false),
+  deleteBranchAfterMerge: z.boolean().default(true),
 });
 
 const ReviewConfigSchema = z.object({
@@ -50,6 +52,8 @@ const DEFAULT_CONFIG: AppConfigInterface = {
     autoPush: false,
     dryRun: false,
     parallel: false,
+    autoMerge: false,
+    deleteBranchAfterMerge: true,
   },
   review: {
     autoApproveTestsPassing: false,

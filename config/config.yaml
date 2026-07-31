@@ -28,6 +28,8 @@ execution:
   autoPush: false
   dryRun: false
   parallel: false
+  autoMerge: false
+  deleteBranchAfterMerge: true
 
 review:
   autoApproveTestsPassing: false
