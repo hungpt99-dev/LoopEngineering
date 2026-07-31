@@ -17,10 +17,23 @@ export class OpenCodeProvider implements CodingAgentProvider {
   ];
 
   private static activeProcess: ResultPromise | null = null;
+  private static activePid: number | null = null;
 
   static killActiveProcess(): void {
+    if (OpenCodeProvider.activePid) {
+      try {
+        process.kill(-OpenCodeProvider.activePid, 'SIGKILL');
+      } catch {
+        try {
+          process.kill(OpenCodeProvider.activePid, 'SIGKILL');
+        } catch { /* already dead */ }
+      }
+      OpenCodeProvider.activePid = null;
+    }
     if (OpenCodeProvider.activeProcess) {
-      OpenCodeProvider.activeProcess.kill('SIGKILL');
+      try {
+        OpenCodeProvider.activeProcess.kill('SIGKILL');
+      } catch { /* already dead */ }
       OpenCodeProvider.activeProcess = null;
     }
   }
@@ -48,10 +61,12 @@ export class OpenCodeProvider implements CodingAgentProvider {
       });
 
       OpenCodeProvider.activeProcess = child;
+      OpenCodeProvider.activePid = child.pid ?? null;
 
       const { stdout } = await child;
 
       OpenCodeProvider.activeProcess = null;
+      OpenCodeProvider.activePid = null;
 
       const duration = Math.round(performance.now() - startTime);
       const filesChanged = await this.getChangedFiles();
@@ -72,6 +87,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
       });
     } catch (error: unknown) {
       OpenCodeProvider.activeProcess = null;
+      OpenCodeProvider.activePid = null;
       const duration = Math.round(performance.now() - startTime);
       const message =
         error instanceof Error ? error.message : 'Unknown error occurred';

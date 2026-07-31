@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
+import readline from 'node:readline';
 import { container } from 'tsyringe';
 import { WorkflowEngine } from '../../application/services/WorkflowEngine.js';
 import { ExecuteIssue } from '../../application/usecases/ExecuteIssue.js';
@@ -25,14 +26,23 @@ export function createRunCommand(): Command {
 
       let forceStop = false;
       let engine: WorkflowEngine | null = null;
+      const wasRaw = process.stdin.isTTY;
+
+      const cleanup = () => {
+        if (wasRaw && process.stdin.isTTY) {
+          try { process.stdin.setRawMode(false); } catch { /* not a TTY */ }
+          try { process.stdin.pause(); } catch { /* ignore */ }
+        }
+      };
 
       const shutdown = async (target: WorkflowEngine) => {
         if (forceStop) {
-          console.log(chalk.red('\n\n🛑 Force stopping...'));
+          console.log(chalk.red('\n🛑 Force stopping...'));
           OpenCodeProvider.killActiveProcess();
+          cleanup();
           process.exit(1);
         }
-        console.log(chalk.yellow('\n\n⏸️  Stopping after current issue... (press Ctrl+C again to force stop)'));
+        console.log(chalk.yellow('\n⏸️  Stopping after current issue... (press Ctrl+C again to force stop)'));
         OpenCodeProvider.killActiveProcess();
         await target.stop();
         forceStop = true;
@@ -55,6 +65,16 @@ export function createRunCommand(): Command {
           },
         });
 
+        if (process.stdin.isTTY) {
+          readline.emitKeypressEvents(process.stdin);
+          process.stdin.setRawMode(true);
+          process.stdin.on('keypress', (_str: string, key: readline.Key) => {
+            if (key.ctrl && key.name === 'c') {
+              if (engine) shutdown(engine);
+            }
+          });
+        }
+
         process.on('SIGINT', onSigint);
         process.on('SIGTERM', onSigterm);
 
@@ -66,16 +86,19 @@ export function createRunCommand(): Command {
 
         console.log(chalk.green.bold('\n🏁 Workflow engine finished'));
         console.log('');
+        cleanup();
         process.exit(0);
       } catch (error) {
         console.error(
           chalk.red('\n❌ Workflow engine failed:'),
           error instanceof Error ? error.message : String(error),
         );
+        cleanup();
         process.exit(1);
       } finally {
         process.removeListener('SIGINT', onSigint);
         process.removeListener('SIGTERM', onSigterm);
+        cleanup();
       }
     });
 
