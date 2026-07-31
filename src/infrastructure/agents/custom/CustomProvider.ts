@@ -4,7 +4,7 @@ import { CodingAgentProvider } from '../../../domain/interfaces/CodingAgentProvi
 import { AgentTask } from '../../../domain/entities/AgentTask.js';
 import { AgentExecutionResult } from '../../../domain/entities/AgentExecutionResult.js';
 import { Logger, LOGGER } from '../../../domain/interfaces/Logger.js';
-import { getChangedFiles } from '../shared/git.js';
+import { extractAgentError, getChangedFiles, getErrorOutput } from '../shared/git.js';
 
 @injectable()
 export class CustomProvider implements CodingAgentProvider {
@@ -70,7 +70,8 @@ export class CustomProvider implements CodingAgentProvider {
       });
     } catch (error: unknown) {
       const duration = Math.round(performance.now() - startTime);
-      const message = error instanceof Error ? error.message : 'Unknown error occurred';
+      const message = extractAgentError(error, this.name);
+      const output = getErrorOutput(error);
 
       this.logger.error('Custom agent task failed', error instanceof Error ? error : undefined, {
         taskId: task.id,
@@ -81,7 +82,7 @@ export class CustomProvider implements CodingAgentProvider {
         taskId: task.id,
         agentName: this.name,
         success: false,
-        output: '',
+        output,
         error: message,
         filesChanged: [],
         duration,
