@@ -5,6 +5,7 @@ import { Milestone } from '../entities/Milestone.js';
 export interface IssueRepository {
   findNextIssue(): Promise<Issue | null>;
   findById(id: string): Promise<Issue | null>;
+  findByIds(ids: string[]): Promise<Issue[]>;
   findByProjectId(projectId: string): Promise<Issue[]>;
   findByMilestoneId(milestoneId: string): Promise<Issue[]>;
   findAll(assigneeId?: string): Promise<Issue[]>;

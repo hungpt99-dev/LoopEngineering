@@ -84,6 +84,21 @@ export class LinearIssueRepository implements IssueRepository {
     }
   }
 
+  async findByIds(ids: string[]): Promise<Issue[]> {
+    if (ids.length === 0) return [];
+    try {
+      const connection = await this.client.issues({
+        filter: { id: { in: ids } },
+        first: Math.min(ids.length, 250),
+      });
+      const issues = await Promise.all(connection.nodes.map((n) => this.mapIssue(n)));
+      return issues;
+    } catch (error) {
+      this.logger.error(`Failed to find issues by ids: ${ids.join(', ')}`, error as Error);
+      throw error;
+    }
+  }
+
   async findByProjectId(projectId: string): Promise<Issue[]> {
     try {
       const connection = await this.client.issues({
@@ -355,8 +370,16 @@ export class LinearIssueRepository implements IssueRepository {
   }
 
   private async mapProject(raw: SdkProject): Promise<Project> {
-    const teamId = '';
-
+    let teamId = '';
+    try {
+      const teamsConn = await raw.teams();
+      const firstTeam = teamsConn?.nodes?.[0];
+      if (firstTeam) {
+        teamId = firstTeam.id;
+      }
+    } catch {
+      this.logger.warn('Failed to fetch teams for project', { projectId: raw.id });
+    }
     const milestonesConn = await raw.projectMilestones();
     const milestoneIds = milestonesConn?.nodes?.map((m) => m.id) ?? [];
 

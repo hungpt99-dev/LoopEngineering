@@ -19,6 +19,7 @@ const EnvSchema = z.object({
   REVIEW_CREATE_ISSUES: z.string().optional(),
   WORKSPACE_DEFAULT_BRANCH: z.string().optional(),
   WORKSPACE_BRANCH_PREFIX: z.string().optional(),
+  AGENT_TIMEOUT_MS: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

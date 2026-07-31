@@ -5,8 +5,6 @@ import { AppConfig, APP_CONFIG } from '../../domain/interfaces/AppConfig.js';
 import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
 import { ISSUE_STATE_TRANSITIONS } from '../../domain/entities/Issue.js';
 
-export const EXECUTE_ISSUE = Symbol('ExecuteIssue');
-
 export interface IssueExecutor {
   execute(issueId: string): Promise<unknown>;
 }

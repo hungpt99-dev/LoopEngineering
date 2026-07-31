@@ -60,37 +60,47 @@ export class ContextBuilderImpl implements ContextBuilder {
       sections.push('(none)');
     }
 
-    if (issue.parentId) {
-      sections.push(`\n### Parent Issue`);
-      const parent = await this.issueRepository.findById(issue.parentId);
-      if (parent) {
-        sections.push(`- **${parent.id}**: ${parent.title}`);
-        sections.push(`  Status: ${parent.status}`);
-      } else {
-        sections.push(`- ${issue.parentId} (not found)`);
-      }
-    }
+    if (issue.parentId || issue.blockedByIssues.length > 0 || issue.blockingIssues.length > 0) {
+      const idsToFetch = new Set<string>();
+      if (issue.parentId) idsToFetch.add(issue.parentId);
+      for (const id of issue.blockedByIssues) idsToFetch.add(id);
+      for (const id of issue.blockingIssues) idsToFetch.add(id);
 
-    if (issue.blockedByIssues.length > 0) {
-      sections.push(`\n### Blocked By`);
-      for (const blockerId of issue.blockedByIssues) {
-        const blocker = await this.issueRepository.findById(blockerId);
-        if (blocker) {
-          sections.push(`- **${blocker.id}**: ${blocker.title} [${blocker.status}]`);
+      const fetchedIssues = await this.issueRepository.findByIds([...idsToFetch]);
+      const issueMap = new Map(fetchedIssues.map((i) => [i.id, i]));
+
+      if (issue.parentId) {
+        sections.push(`\n### Parent Issue`);
+        const parent = issueMap.get(issue.parentId);
+        if (parent) {
+          sections.push(`- **${parent.id}**: ${parent.title}`);
+          sections.push(`  Status: ${parent.status}`);
         } else {
-          sections.push(`- ${blockerId} (not found)`);
+          sections.push(`- ${issue.parentId} (not found)`);
         }
       }
-    }
 
-    if (issue.blockingIssues.length > 0) {
-      sections.push(`\n### Blocking`);
-      for (const blockingId of issue.blockingIssues) {
-        const blocking = await this.issueRepository.findById(blockingId);
-        if (blocking) {
-          sections.push(`- **${blocking.id}**: ${blocking.title} [${blocking.status}]`);
-        } else {
-          sections.push(`- ${blockingId} (not found)`);
+      if (issue.blockedByIssues.length > 0) {
+        sections.push(`\n### Blocked By`);
+        for (const blockerId of issue.blockedByIssues) {
+          const blocker = issueMap.get(blockerId);
+          if (blocker) {
+            sections.push(`- **${blocker.id}**: ${blocker.title} [${blocker.status}]`);
+          } else {
+            sections.push(`- ${blockerId} (not found)`);
+          }
+        }
+      }
+
+      if (issue.blockingIssues.length > 0) {
+        sections.push(`\n### Blocking`);
+        for (const blockingId of issue.blockingIssues) {
+          const blocking = issueMap.get(blockingId);
+          if (blocking) {
+            sections.push(`- **${blocking.id}**: ${blocking.title} [${blocking.status}]`);
+          } else {
+            sections.push(`- ${blockingId} (not found)`);
+          }
         }
       }
     }

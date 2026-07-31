@@ -42,6 +42,7 @@ function createIssue(
 function mockIssueRepo() {
   return {
     findById: vi.fn().mockResolvedValue(null),
+    findByIds: vi.fn().mockResolvedValue([]),
     findNextIssue: vi.fn().mockResolvedValue(null),
     findByProjectId: vi.fn().mockResolvedValue([]),
     findByMilestoneId: vi.fn().mockResolvedValue([]),

@@ -118,12 +118,23 @@ export class LinearService {
     @inject(LOGGER) private readonly logger: Logger,
   ) {}
 
-  getWorkspace(): WorkspaceInfo {
-    return {
-      id: 'workspace',
-      name: 'Linear Workspace',
-      key: 'LIN',
-    };
+  async getWorkspace(): Promise<WorkspaceInfo> {
+    try {
+      const client = this.clientFactory.getClient();
+      const org = await client.organization;
+      return {
+        id: org.id,
+        name: org.name,
+        key: org.urlKey,
+      };
+    } catch {
+      this.logger.warn('Failed to fetch workspace info, using fallback');
+      return {
+        id: 'workspace',
+        name: 'Linear Workspace',
+        key: 'LIN',
+      };
+    }
   }
 
   async getIssuesByStatus(status: string): Promise<Issue[]> {
