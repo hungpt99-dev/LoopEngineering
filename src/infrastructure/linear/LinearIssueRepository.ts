@@ -22,16 +22,16 @@ import { LINEAR_CLIENT_FACTORY } from './LinearClient.js';
 
 const { PaginationSortOrder, IssueRelationType } = LinearDocument;
 
-const STATUS_TO_LINEAR_STATE: Record<string, string> = {
-  [IssueStatus.CREATED]: 'Backlog',
-  [IssueStatus.ANALYZING]: 'In Progress',
-  [IssueStatus.PLANNING]: 'In Progress',
-  [IssueStatus.CODING]: 'In Progress',
-  [IssueStatus.TESTING]: 'In Progress',
-  [IssueStatus.REVIEWING]: 'In Progress',
-  [IssueStatus.COMPLETED]: 'Done',
-  [IssueStatus.FAILED]: 'Canceled',
-  [IssueStatus.RETRY]: 'In Progress',
+const STATUS_TO_LINEAR_STATE_TYPE: Record<string, string> = {
+  [IssueStatus.CREATED]: 'backlog',
+  [IssueStatus.ANALYZING]: 'started',
+  [IssueStatus.PLANNING]: 'started',
+  [IssueStatus.CODING]: 'started',
+  [IssueStatus.TESTING]: 'started',
+  [IssueStatus.REVIEWING]: 'started',
+  [IssueStatus.COMPLETED]: 'completed',
+  [IssueStatus.FAILED]: 'canceled',
+  [IssueStatus.RETRY]: 'started',
 };
 
 const LINEAR_STATE_TYPE_TO_STATUS: Record<string, IssueStatus> = {
@@ -59,8 +59,7 @@ export class LinearIssueRepository implements IssueRepository {
         filter: {
           and: [
             { assignee: { null: true } },
-            { state: { type: { neq: 'completed' } } },
-            { state: { type: { neq: 'canceled' } } },
+            { state: { type: { nin: ['completed', 'canceled'] } } },
             { hasBlockedByRelations: { eq: false } },
           ],
         },
@@ -136,22 +135,28 @@ export class LinearIssueRepository implements IssueRepository {
 
   async updateStatus(issueId: string, status: string): Promise<void> {
     try {
-      const stateName = STATUS_TO_LINEAR_STATE[status] ?? 'In Progress';
+      const targetType = STATUS_TO_LINEAR_STATE_TYPE[status];
+      if (!targetType) {
+        throw new Error(`Unknown status: ${status}`);
+      }
 
       const statesConn = await this.client.workflowStates({ first: 250 });
-      const matchedState = statesConn.nodes.find(
-        (s: WorkflowState) => s.name.toLowerCase() === stateName.toLowerCase(),
+      const states = statesConn.nodes as WorkflowState[];
+
+      const matchedState = states.find(
+        (s: WorkflowState) => (s as unknown as Record<string, unknown>).type === targetType,
       );
 
       if (!matchedState) {
-        this.logger.warn(
-          `Workflow state "${stateName}" not found. Skipping update.`,
+        const availableTypes = states.map((s: WorkflowState) => (s as unknown as Record<string, unknown>).type);
+        throw new Error(
+          `No workflow state found for type "${targetType}". Available types: ${availableTypes.join(', ')}. ` +
+          `Ensure your Linear workspace has workflow states with standard types (backlog, started, completed, canceled).`,
         );
-        return;
       }
 
       await this.client.updateIssue(issueId, { stateId: matchedState.id });
-      this.logger.info(`Updated issue ${issueId} status to ${stateName}`);
+      this.logger.info(`Updated issue ${issueId} status to ${targetType} (state: ${matchedState.name})`);
     } catch (error) {
       this.logger.error(`Failed to update status for issue ${issueId}`, error as Error);
       throw error;

@@ -24,8 +24,9 @@ export function createRunCommand(): Command {
       console.log('');
 
       let forceStop = false;
+      let engine: WorkflowEngine | null = null;
 
-      const shutdown = async (engine: WorkflowEngine) => {
+      const shutdown = async (target: WorkflowEngine) => {
         if (forceStop) {
           console.log(chalk.red('\n\n🛑 Force stopping...'));
           OpenCodeProvider.killActiveProcess();
@@ -33,12 +34,19 @@ export function createRunCommand(): Command {
         }
         console.log(chalk.yellow('\n\n⏸️  Stopping after current issue... (press Ctrl+C again to force stop)'));
         OpenCodeProvider.killActiveProcess();
-        await engine.stop();
+        await target.stop();
         forceStop = true;
       };
 
+      const onSigint = () => {
+        if (engine) shutdown(engine);
+      };
+      const onSigterm = () => {
+        if (engine) shutdown(engine);
+      };
+
       try {
-        const engine = container.resolve(WorkflowEngine);
+        engine = container.resolve(WorkflowEngine);
         const executeIssue = container.resolve(ExecuteIssue);
 
         engine.setExecutor({
@@ -47,8 +55,8 @@ export function createRunCommand(): Command {
           },
         });
 
-        process.on('SIGINT', () => shutdown(engine));
-        process.on('SIGTERM', () => shutdown(engine));
+        process.on('SIGINT', onSigint);
+        process.on('SIGTERM', onSigterm);
 
         console.log(chalk.gray('Starting workflow engine...'));
         console.log(chalk.yellow('Press Ctrl+C once to stop gracefully, twice to force exit'));
@@ -65,6 +73,9 @@ export function createRunCommand(): Command {
           error instanceof Error ? error.message : String(error),
         );
         process.exit(1);
+      } finally {
+        process.removeListener('SIGINT', onSigint);
+        process.removeListener('SIGTERM', onSigterm);
       }
     });
 

@@ -38,9 +38,10 @@ export class OpenCodeProvider implements CodingAgentProvider {
     });
 
     try {
+      const timeout = parseInt(process.env.AGENT_TIMEOUT_MS ?? '600000', 10);
       const child = execa('opencode', ['run', prompt, '--print-logs'], {
         cwd: process.cwd(),
-        timeout: 3_600_000,
+        timeout,
         stdin: 'ignore',
         stderr: 'inherit',
         env: { ...process.env, CI: 'true' },

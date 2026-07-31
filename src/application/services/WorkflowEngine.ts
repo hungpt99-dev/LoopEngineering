@@ -26,6 +26,7 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 export class WorkflowEngine {
   private executor: IssueExecutor | null = null;
   private running = false;
+  private processedIssueIds = new Set<string>();
 
   constructor(
     @inject(ISSUE_REPOSITORY) private readonly issueRepository: IssueRepository,
@@ -49,6 +50,7 @@ export class WorkflowEngine {
     }
 
     this.running = true;
+    this.processedIssueIds = new Set();
     this.logger.info('Workflow engine started', {
       maxRetries: this.config.execution.maxRetries,
       autoCommit: this.config.execution.autoCommit,
@@ -66,14 +68,22 @@ export class WorkflowEngine {
           break;
         }
 
+        if (this.processedIssueIds.has(issue.id)) {
+          this.logger.warn('Skipping already processed issue', { issueId: issue.id });
+          issue = await this.issueRepository.findNextIssue();
+          continue;
+        }
+
         try {
           await this.processIssue(issue.id);
+          this.processedIssueIds.add(issue.id);
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : String(err);
           this.logger.error('Issue processing failed', err instanceof Error ? err : undefined, {
             issueId: issue.id,
           });
           await this.markFailed(issue.id, errorMessage);
+          this.processedIssueIds.add(issue.id);
         }
 
         issue = await this.issueRepository.findNextIssue();
@@ -121,8 +131,6 @@ export class WorkflowEngine {
   }
 
   private async processIssue(issueId: string): Promise<void> {
-    await this.advanceState(issueId, IssueStatus.ANALYZING);
-
     this.logger.info('Dispatching to executor', { issueId });
 
     const executor = this.executor;
