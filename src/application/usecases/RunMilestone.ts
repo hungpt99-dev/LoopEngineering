@@ -28,9 +28,7 @@ export class RunMilestone {
     }
 
     const allIssues = await this.issueRepo.findByMilestoneId(milestone.id);
-    const pendingIssues = allIssues.filter(
-      (issue) => issue.status !== IssueStatus.COMPLETED,
-    );
+    const pendingIssues = allIssues.filter((issue) => issue.status !== IssueStatus.COMPLETED);
 
     this.logger.info('Starting milestone execution', {
       milestone: milestoneName,

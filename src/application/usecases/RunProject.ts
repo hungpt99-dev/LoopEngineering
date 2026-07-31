@@ -27,9 +27,7 @@ export class RunProject {
     }
 
     const allIssues = await this.issueRepo.findByProjectId(project.id);
-    const pendingIssues = allIssues.filter(
-      (issue) => issue.status !== IssueStatus.COMPLETED,
-    );
+    const pendingIssues = allIssues.filter((issue) => issue.status !== IssueStatus.COMPLETED);
 
     this.logger.info('Starting project execution', {
       project: projectName,

@@ -4,6 +4,7 @@ import { CodingAgentProvider } from '../../../domain/interfaces/CodingAgentProvi
 import { AgentTask } from '../../../domain/entities/AgentTask.js';
 import { AgentExecutionResult } from '../../../domain/entities/AgentExecutionResult.js';
 import { Logger, LOGGER } from '../../../domain/interfaces/Logger.js';
+import { getChangedFiles } from '../shared/git.js';
 
 @injectable()
 export class CustomProvider implements CodingAgentProvider {
@@ -13,12 +14,12 @@ export class CustomProvider implements CodingAgentProvider {
   private readonly command: string;
   private readonly args: string[];
 
-  constructor(
-    @inject(LOGGER) private readonly logger: Logger,
-  ) {
+  constructor(@inject(LOGGER) private readonly logger: Logger) {
     this.command = process.env.CUSTOM_AGENT_COMMAND ?? '';
     this.args = process.env.CUSTOM_AGENT_ARGS
-      ? process.env.CUSTOM_AGENT_ARGS.split(',').map((a) => a.trim()).filter((a) => a.length > 0)
+      ? process.env.CUSTOM_AGENT_ARGS.split(',')
+          .map((a) => a.trim())
+          .filter((a) => a.length > 0)
       : [];
   }
 
@@ -51,7 +52,7 @@ export class CustomProvider implements CodingAgentProvider {
       });
 
       const duration = Math.round(performance.now() - startTime);
-      const filesChanged = await this.getChangedFiles();
+      const filesChanged = await getChangedFiles();
 
       this.logger.info('Custom agent task completed', {
         taskId: task.id,
@@ -69,8 +70,7 @@ export class CustomProvider implements CodingAgentProvider {
       });
     } catch (error: unknown) {
       const duration = Math.round(performance.now() - startTime);
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
 
       this.logger.error('Custom agent task failed', error instanceof Error ? error : undefined, {
         taskId: task.id,
@@ -102,7 +102,7 @@ export class CustomProvider implements CodingAgentProvider {
     }
   }
 
-  async validateEnvironment(): Promise<string[]> {
+  validateEnvironment(): string[] {
     const issues: string[] = [];
 
     if (!this.command) {
@@ -110,19 +110,5 @@ export class CustomProvider implements CodingAgentProvider {
     }
 
     return issues;
-  }
-
-  private async getChangedFiles(): Promise<string[]> {
-    try {
-      const { stdout } = await execa('git', ['diff', '--name-only', 'HEAD'], {
-        reject: false,
-      });
-      return stdout
-        .trim()
-        .split('\n')
-        .filter((line) => line.length > 0);
-    } catch {
-      return [];
-    }
   }
 }

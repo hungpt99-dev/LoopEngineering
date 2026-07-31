@@ -27,10 +27,7 @@ getContainer();
 
 const program = new Command();
 
-program
-  .name('ai-dev')
-  .description('AI Software Development Orchestrator')
-  .version('1.0.0');
+program.name('ai-dev').description('AI Software Development Orchestrator').version('1.0.0');
 
 program.addCommand(createAuditCommand());
 program.addCommand(createNextCommand());

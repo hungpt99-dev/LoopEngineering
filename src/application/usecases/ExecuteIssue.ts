@@ -19,7 +19,8 @@ import type { AppConfig } from '../../domain/interfaces/AppConfig.js';
 import { APP_CONFIG } from '../../domain/interfaces/AppConfig.js';
 import type { ContextBuilder } from '../../domain/interfaces/ContextBuilder.js';
 import { CONTEXT_BUILDER } from '../../domain/interfaces/ContextBuilder.js';
-import { AgentRegistry, AGENT_REGISTRY } from '../../infrastructure/agents/AgentRegistry.js';
+import type { IAgentRegistry } from '../../domain/interfaces/AgentRegistry.js';
+import { AGENT_REGISTRY } from '../../domain/interfaces/AgentRegistry.js';
 import { ExecutionHistory } from '../../domain/entities/ExecutionHistory.js';
 import { AgentTask } from '../../domain/entities/AgentTask.js';
 import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
@@ -28,7 +29,7 @@ import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
 export class ExecuteIssue {
   constructor(
     @inject(ISSUE_REPOSITORY) private readonly issueRepo: IssueRepository,
-    @inject(AGENT_REGISTRY) private readonly agentRegistry: AgentRegistry,
+    @inject(AGENT_REGISTRY) private readonly agentRegistry: IAgentRegistry,
     @inject(GIT_REPOSITORY) private readonly git: GitRepository,
     @inject(TEST_RUNNER) private readonly testRunner: TestRunner,
     @inject(PLANNER_SERVICE) private readonly planner: PlannerService,
@@ -68,7 +69,7 @@ export class ExecuteIssue {
 
       const fullContext = await this.contextBuilder.buildFullContext(issue, plan);
       const availableAgents = this.buildAgentInfoList();
-      agentName = await this.planner.selectAgent(issue, plan, availableAgents);
+      agentName = this.planner.selectAgent(issue, plan, availableAgents);
       execution = await this.persistStatus(execution, IssueStatus.PLANNING);
 
       // --- CODING ---
@@ -102,7 +103,9 @@ export class ExecuteIssue {
         available: await selectedAgent.isAvailable(),
       });
 
-      this.logger.info(`Running agent '${selectedAgent.name}'... (this may take several minutes)`, { issueId });
+      this.logger.info(`Running agent '${selectedAgent.name}'... (this may take several minutes)`, {
+        issueId,
+      });
 
       const agentResult = await selectedAgent.execute(task);
       if (!agentResult.success) {
@@ -143,7 +146,11 @@ export class ExecuteIssue {
           break;
         }
 
-        this.logger.warn('Tests failed, retrying', { issueId, attempt, maxRetries: this.config.execution.maxRetries });
+        this.logger.warn('Tests failed, retrying', {
+          issueId,
+          attempt,
+          maxRetries: this.config.execution.maxRetries,
+        });
 
         const failedTests = testResult.errors.slice(0, 15);
         const errorSummary = failedTests.join('\n');
@@ -192,7 +199,10 @@ export class ExecuteIssue {
         throw new Error(`Tests failed after ${this.config.execution.maxRetries} retries`);
       }
 
-      await this.issueRepo.addComment(issueId, `Tests passed:\n\`\`\`\n${testResultOutput}\n\`\`\``);
+      await this.issueRepo.addComment(
+        issueId,
+        `Tests passed:\n\`\`\`\n${testResultOutput}\n\`\`\``,
+      );
       execution = await this.persistStatus(execution, IssueStatus.TESTING);
 
       // --- REVIEWING ---
@@ -209,9 +219,12 @@ export class ExecuteIssue {
       );
 
       if (review.isApproved) {
-        await this.issueRepo.addComment(issueId, `Review passed (score: ${review.score}): ${review.summary}`);
+        await this.issueRepo.addComment(
+          issueId,
+          `Review passed (score: ${review.score}): ${review.summary}`,
+        );
       } else {
-        const suggestions = await this.reviewer.suggestFixes(review.issues);
+        const suggestions = this.reviewer.suggestFixes(review.issues);
         await this.issueRepo.addComment(
           issueId,
           `Review found ${review.issues.length} issue(s) (score: ${review.score}):\n${review.issues.map((ri) => `- **[${ri.severity}] ${ri.category}**: ${ri.description}${ri.suggestion ? `\n  Suggestion: ${ri.suggestion}` : ''}`).join('\n')}\n\nSuggested fixes:\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}`,
@@ -234,7 +247,9 @@ export class ExecuteIssue {
         try {
           this.logger.info('Merging branch', { branch: branchName });
           await this.git.mergeToDefaultBranch(branchName);
-          completionMsgParts.push(`Merged \`${branchName}\` into \`${this.config.workspace.defaultBranch}\`.`);
+          completionMsgParts.push(
+            `Merged \`${branchName}\` into \`${this.config.workspace.defaultBranch}\`.`,
+          );
 
           if (this.config.execution.deleteBranchAfterMerge) {
             try {
@@ -277,7 +292,10 @@ export class ExecuteIssue {
       });
 
       await this.issueRepo.updateStatus(issueId, IssueStatus.FAILED);
-      await this.issueRepo.addComment(issueId, `Execution failed: ${message}${stack ? `\n\`\`\`\n${stack}\n\`\`\`` : ''}`);
+      await this.issueRepo.addComment(
+        issueId,
+        `Execution failed: ${message}${stack ? `\n\`\`\`\n${stack}\n\`\`\`` : ''}`,
+      );
 
       execution = await this.store.update(execution.id, {
         status: IssueStatus.FAILED,
@@ -297,9 +315,13 @@ export class ExecuteIssue {
     }
 
     if (provider) {
-      this.logger.warn(`Preferred agent '${preferredName}' is not available, falling back`, { preferredName });
+      this.logger.warn(`Preferred agent '${preferredName}' is not available, falling back`, {
+        preferredName,
+      });
     } else {
-      this.logger.warn(`Preferred agent '${preferredName}' not found, falling back`, { preferredName });
+      this.logger.warn(`Preferred agent '${preferredName}' not found, falling back`, {
+        preferredName,
+      });
     }
 
     const available = await this.agentRegistry.getAvailableProviders();
@@ -345,26 +367,6 @@ export class ExecuteIssue {
       commit: undefined,
       branch: branchName,
       retries: [],
-      toJSON() {
-        return {
-          id: '',
-          issueId: this.issueId,
-          issueTitle: this.issueTitle,
-          projectId: this.projectId,
-          milestoneId: this.milestoneId,
-          agentUsed: this.agentUsed,
-          status: this.status,
-          duration: this.duration,
-          tokenUsage: this.tokenUsage,
-          result: this.result,
-          error: this.error,
-          commit: this.commit,
-          branch: this.branch,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          retries: this.retries,
-        };
-      },
     });
   }
 

@@ -3,15 +3,21 @@ import { Issue } from '../../domain/entities/Issue.js';
 import { ExecutionPlan } from '../../domain/entities/ExecutionPlan.js';
 import { AgentInfo } from '../../domain/interfaces/PlannerService.js';
 import { Logger, LOGGER } from '../../domain/interfaces/Logger.js';
+import { Complexity } from '../../domain/value-objects/IssueStatus.js';
 
 const BUG_FIX_PATTERN = /\bbug\b|\bfix\b|\bpatch\b|\bhotfix\b|\btypo\b|\bminor\b|\bquick\s*fix\b/i;
-const REFACTOR_PATTERN = /\brefactor\b|\barchitecture\b|\bredesign\b|\brestructure\b|\boverhaul\b|\bmigrate\b|\brenovate\b/i;
-const FRONTEND_PATTERN = /\bcomponent\b|\bui\b|\breact\b|\bvue\b|\bfrontend\b|\bcss\b|\bstyle\b|\blayout\b|\brespons\w+\b|\banimation\b|\bjsx\b|\btsx\b|\bmaterial[-\s]?ui\b|\btailwind\b/i;
+const REFACTOR_PATTERN =
+  /\brefactor\b|\barchitecture\b|\bredesign\b|\brestructure\b|\boverhaul\b|\bmigrate\b|\brenovate\b/i;
+const FRONTEND_PATTERN =
+  /\bcomponent\b|\bui\b|\breact\b|\bvue\b|\bfrontend\b|\bcss\b|\bstyle\b|\blayout\b|\brespons\w+\b|\banimation\b|\bjsx\b|\btsx\b|\bmaterial[-\s]?ui\b|\btailwind\b/i;
 
 const AGENT_DESCRIPTIONS: Record<string, string> = {
-  codex: 'OpenAI Codex - specialized in quick fixes, bug patches, and simple feature implementations',
-  opencode: 'OpenCode - full-stack agent capable of large refactors, architecture changes, and complex implementations',
-  claude: 'Anthropic Claude - excels at frontend development, UI components, and visual design work',
+  codex:
+    'OpenAI Codex - specialized in quick fixes, bug patches, and simple feature implementations',
+  opencode:
+    'OpenCode - full-stack agent capable of large refactors, architecture changes, and complex implementations',
+  claude:
+    'Anthropic Claude - excels at frontend development, UI components, and visual design work',
 };
 
 @injectable()
@@ -21,7 +27,9 @@ export class AgentRouter {
   route(issue: Issue, plan: ExecutionPlan, agents: AgentInfo[]): AgentInfo {
     const enabled = agents.filter((a) => a.enabled);
     if (enabled.length === 0) {
-      this.logger.error('No enabled agents available for routing', undefined, { issueId: issue.id });
+      this.logger.error('No enabled agents available for routing', undefined, {
+        issueId: issue.id,
+      });
       throw new Error('No enabled agents available for routing');
     }
 
@@ -44,7 +52,10 @@ export class AgentRouter {
       reason = 'issue classified as frontend / UI work';
     }
 
-    if ((plan.complexity === 'high' || plan.complexity === 'very_high') && !preferredAgentName) {
+    if (
+      (plan.complexity === Complexity.HIGH || plan.complexity === Complexity.VERY_HIGH) &&
+      !preferredAgentName
+    ) {
       preferredAgentName = 'opencode';
       reason = `complexity is ${plan.complexity}`;
     }
@@ -89,9 +100,8 @@ export class AgentRouter {
 
   describeAgent(agent: AgentInfo): string {
     const base = AGENT_DESCRIPTIONS[agent.name] ?? `${agent.name} - general-purpose coding agent`;
-    const capabilities = agent.capabilities.length > 0
-      ? `\nCapabilities: ${agent.capabilities.join(', ')}`
-      : '';
+    const capabilities =
+      agent.capabilities.length > 0 ? `\nCapabilities: ${agent.capabilities.join(', ')}` : '';
     const priority = `\nPriority: ${agent.priority}`;
     const status = agent.enabled ? 'Enabled' : 'Disabled';
     return `${base}\nStatus: ${status}${capabilities}${priority}`;

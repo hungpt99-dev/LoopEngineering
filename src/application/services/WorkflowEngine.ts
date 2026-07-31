@@ -1,26 +1,15 @@
 import { injectable, inject } from 'tsyringe';
-import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
 import { IssueRepository, ISSUE_REPOSITORY } from '../../domain/interfaces/IssueRepository.js';
 import { Logger, LOGGER } from '../../domain/interfaces/Logger.js';
 import { AppConfig, APP_CONFIG } from '../../domain/interfaces/AppConfig.js';
+import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
+import { ISSUE_STATE_TRANSITIONS } from '../../domain/entities/Issue.js';
 
 export const EXECUTE_ISSUE = Symbol('ExecuteIssue');
 
 export interface IssueExecutor {
   execute(issueId: string): Promise<unknown>;
 }
-
-const VALID_TRANSITIONS: Record<string, string[]> = {
-  CREATED: ['ANALYZING'],
-  ANALYZING: ['PLANNING', 'FAILED'],
-  PLANNING: ['CODING', 'FAILED'],
-  CODING: ['TESTING', 'FAILED'],
-  TESTING: ['REVIEWING', 'RETRY', 'FAILED'],
-  REVIEWING: ['COMPLETED', 'RETRY', 'FAILED'],
-  COMPLETED: [],
-  FAILED: ['RETRY'],
-  RETRY: ['CODING'],
-};
 
 @injectable()
 export class WorkflowEngine {
@@ -45,7 +34,10 @@ export class WorkflowEngine {
     }
 
     if (!this.executor) {
-      this.logger.error('No executor configured', new Error('Call setExecutor() before runAutonomous()'));
+      this.logger.error(
+        'No executor configured',
+        new Error('Call setExecutor() before runAutonomous()'),
+      );
       throw new Error('No executor configured. Call setExecutor() first.');
     }
 
@@ -96,13 +88,13 @@ export class WorkflowEngine {
     }
   }
 
-  async stop(): Promise<void> {
+  stop(): void {
     this.running = false;
     this.logger.info('Workflow engine stop requested');
   }
 
-  async validateTransition(issueId: string, from: string, to: string): Promise<boolean> {
-    const allowed = VALID_TRANSITIONS[from];
+  validateTransition(issueId: string, from: string, to: string): boolean {
+    const allowed = ISSUE_STATE_TRANSITIONS[from];
     if (!allowed) {
       this.logger.warn('Unknown source state', { issueId, from });
       return false;
@@ -110,7 +102,12 @@ export class WorkflowEngine {
 
     const isValid = allowed.includes(to);
     if (!isValid) {
-      this.logger.warn('Invalid state transition', { issueId, from, to, allowed: allowed.join(', ') });
+      this.logger.warn('Invalid state transition', {
+        issueId,
+        from,
+        to,
+        allowed: allowed.join(', '),
+      });
     }
 
     return isValid;

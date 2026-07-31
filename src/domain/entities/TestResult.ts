@@ -58,18 +58,37 @@ export class TestResult {
     });
   }
 
-  get success(): boolean { return this.props.success; }
-  get totalTests(): number { return this.props.totalTests; }
-  get passedTests(): number { return this.props.passedTests; }
-  get failedTests(): number { return this.props.failedTests; }
-  get skippedTests(): number { return this.props.skippedTests; }
-  get duration(): number { return this.props.duration; }
-  get output(): string { return this.props.output; }
-  get errors(): string[] { return this.props.errors; }
-  get coverage(): number | undefined { return this.props.coverage; }
+  get success(): boolean {
+    return this.props.success;
+  }
+  get totalTests(): number {
+    return this.props.totalTests;
+  }
+  get passedTests(): number {
+    return this.props.passedTests;
+  }
+  get failedTests(): number {
+    return this.props.failedTests;
+  }
+  get skippedTests(): number {
+    return this.props.skippedTests;
+  }
+  get duration(): number {
+    return this.props.duration;
+  }
+  get output(): string {
+    return this.props.output;
+  }
+  get errors(): string[] {
+    return this.props.errors;
+  }
+  get coverage(): number | undefined {
+    return this.props.coverage;
+  }
 
   get formattedSummary(): string {
-    if (this.props.success) return `Tests passed${this.props.coverage ? ` (coverage: ${this.props.coverage}%)` : ''}`;
+    if (this.props.success)
+      return `Tests passed${this.props.coverage ? ` (coverage: ${this.props.coverage}%)` : ''}`;
     return `Tests failed: ${this.props.failedTests}/${this.props.totalTests}${this.props.coverage ? ` (coverage: ${this.props.coverage}%)` : ''}\n${this.props.errors.map((e) => `  - ${e}`).join('\n')}`;
   }
 

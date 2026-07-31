@@ -10,13 +10,10 @@ import { inject, injectable } from 'tsyringe';
 import { Issue } from '../../domain/entities/Issue.js';
 import { Milestone } from '../../domain/entities/Milestone.js';
 import { Project } from '../../domain/entities/Project.js';
-import type {
-  CreateIssueInput,
-  IssueRepository,
-} from '../../domain/interfaces/IssueRepository.js';
+import type { CreateIssueInput, IssueRepository } from '../../domain/interfaces/IssueRepository.js';
 import type { Logger } from '../../domain/interfaces/Logger.js';
 import { LOGGER } from '../../domain/interfaces/Logger.js';
-import { IssueStatus, Priority } from '../../domain/value-objects/IssueStatus.js';
+import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
 import type { LinearClientFactory } from './LinearClient.js';
 import { LINEAR_CLIENT_FACTORY } from './LinearClient.js';
 
@@ -141,22 +138,26 @@ export class LinearIssueRepository implements IssueRepository {
       }
 
       const statesConn = await this.client.workflowStates({ first: 250 });
-      const states = statesConn.nodes as WorkflowState[];
+      const states = statesConn.nodes;
 
       const matchedState = states.find(
         (s: WorkflowState) => (s as unknown as Record<string, unknown>).type === targetType,
       );
 
       if (!matchedState) {
-        const availableTypes = states.map((s: WorkflowState) => (s as unknown as Record<string, unknown>).type);
+        const availableTypes = states.map(
+          (s: WorkflowState) => (s as unknown as Record<string, unknown>).type,
+        );
         throw new Error(
           `No workflow state found for type "${targetType}". Available types: ${availableTypes.join(', ')}. ` +
-          `Ensure your Linear workspace has workflow states with standard types (backlog, started, completed, canceled).`,
+            `Ensure your Linear workspace has workflow states with standard types (backlog, started, completed, canceled).`,
         );
       }
 
       await this.client.updateIssue(issueId, { stateId: matchedState.id });
-      this.logger.info(`Updated issue ${issueId} status to ${targetType} (state: ${matchedState.name})`);
+      this.logger.info(
+        `Updated issue ${issueId} status to ${targetType} (state: ${matchedState.name})`,
+      );
     } catch (error) {
       this.logger.error(`Failed to update status for issue ${issueId}`, error as Error);
       throw error;
@@ -271,9 +272,7 @@ export class LinearIssueRepository implements IssueRepository {
       if (!project) return [];
 
       const milestonesConn = await project.projectMilestones({ first: 50 });
-      const milestones = await Promise.all(
-        milestonesConn.nodes.map((n) => this.mapMilestone(n)),
-      );
+      const milestones = await Promise.all(milestonesConn.nodes.map((n) => this.mapMilestone(n)));
       return milestones;
     } catch (error) {
       this.logger.error(`Failed to find milestones for project: ${projectId}`, error as Error);
@@ -336,7 +335,7 @@ export class LinearIssueRepository implements IssueRepository {
       title: raw.title,
       description: raw.description ?? '',
       status: mappedStatus,
-      priority: raw.priority as Priority,
+      priority: raw.priority,
       projectId: project?.id,
       projectName: project?.name,
       milestoneId: milestone?.id,
@@ -348,9 +347,9 @@ export class LinearIssueRepository implements IssueRepository {
       blockedByIssues: blockedByIds.filter(Boolean),
       blockingIssues: blockingIds.filter(Boolean),
       estimate: raw.estimate,
-      dueDate: raw.dueDate ? new Date(raw.dueDate) : undefined,
-      createdAt: raw.createdAt,
-      updatedAt: raw.updatedAt,
+      dueDate: raw.dueDate ? new Date(String(raw.dueDate)) : undefined,
+      createdAt: new Date(raw.createdAt),
+      updatedAt: new Date(raw.updatedAt),
       branchName: raw.branchName,
     });
   }
@@ -367,8 +366,8 @@ export class LinearIssueRepository implements IssueRepository {
       description: raw.description,
       state: raw.state,
       progress: raw.progress,
-      startDate: raw.startDate ? new Date(raw.startDate) : undefined,
-      targetDate: raw.targetDate ? new Date(raw.targetDate) : undefined,
+      startDate: raw.startDate ? new Date(String(raw.startDate)) : undefined,
+      targetDate: raw.targetDate ? new Date(String(raw.targetDate)) : undefined,
       teamId,
       milestoneIds,
     });
@@ -382,7 +381,7 @@ export class LinearIssueRepository implements IssueRepository {
       name: raw.name,
       description: raw.description ?? '',
       projectId: project?.id ?? '',
-      targetDate: raw.targetDate ? new Date(raw.targetDate) : undefined,
+      targetDate: raw.targetDate ? new Date(String(raw.targetDate)) : undefined,
       progress: 0,
     });
   }

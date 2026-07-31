@@ -4,20 +4,6 @@ import { ReviewerService } from '../../domain/interfaces/ReviewerService.js';
 import { IssueRepository, ISSUE_REPOSITORY } from '../../domain/interfaces/IssueRepository.js';
 import { Logger, LOGGER } from '../../domain/interfaces/Logger.js';
 
-const SECURITY_SENSITIVE_PATTERNS: Record<string, string> = {
-  'Hardcoded credentials': 'plaintext password or API key in source code',
-  'eval() usage': 'dynamic code execution with eval()',
-  'SQL injection risk': 'unsanitized input in SQL query',
-  'console.log left in production': 'debug logging in production code',
-  dangerouslySetInnerHTML: 'React dangerouslySetInnerHTML usage',
-};
-
-const ANTI_PATTERN_CATEGORIES: Record<string, string[]> = {
-  'Large file (>500 lines suggested refactor)': [],
-  'Inconsistent naming convention': [],
-  'Missing error handling': [],
-};
-
 const MISSING_TEST_EXTENSIONS = /\.(ts|tsx|js|jsx)$/;
 
 @injectable()
@@ -56,24 +42,32 @@ export class ReviewServiceImpl implements ReviewerService {
     issues.push(...requirementIssues);
 
     const testPassed = this.isTestPassing(testResult);
-    const hasSecurityIssues = securityIssues.some((i) => i.severity === 'critical' || i.severity === 'major');
+    const hasSecurityIssues = securityIssues.some(
+      (i) => i.severity === 'critical' || i.severity === 'major',
+    );
 
     if (hasSecurityIssues) {
-      const suggestions = await this.suggestFixes(securityIssues);
+      const suggestions = this.suggestFixes(securityIssues);
       const score = this.calculateScore(issues);
-      this.logger.warn('Review: changes requested due to security concerns', { issueId, criticalCount: securityIssues.length });
+      this.logger.warn('Review: changes requested due to security concerns', {
+        issueId,
+        criticalCount: securityIssues.length,
+      });
       return ReviewResult.requestChanges(issues, suggestions, score);
     }
 
     if (!testPassed) {
-      const suggestions = await this.suggestFixes(testIssues);
+      const suggestions = this.suggestFixes(testIssues);
       const score = this.calculateScore(issues);
-      this.logger.warn('Review: changes requested due to failing tests', { issueId, failingTests: testResult });
+      this.logger.warn('Review: changes requested due to failing tests', {
+        issueId,
+        failingTests: testResult,
+      });
       return ReviewResult.requestChanges(issues, suggestions, score);
     }
 
     if (issues.length > 0) {
-      const suggestions = await this.suggestFixes(issues);
+      const suggestions = this.suggestFixes(issues);
       const score = this.calculateScore(issues);
       return ReviewResult.requestChanges(issues, suggestions, score);
     }
@@ -83,7 +77,7 @@ export class ReviewServiceImpl implements ReviewerService {
     return ReviewResult.approved('All checks passed. Implementation meets requirements.', score);
   }
 
-  async suggestFixes(issues: ReviewIssue[]): Promise<string[]> {
+  suggestFixes(issues: ReviewIssue[]): string[] {
     const suggestions: string[] = [];
 
     for (const issue of issues) {
@@ -96,6 +90,7 @@ export class ReviewServiceImpl implements ReviewerService {
 
   private checkSecurity(filesChanged: string[]): ReviewIssue[] {
     const securityIssues: ReviewIssue[] = [];
+    const matchedPatterns = new Set<string>();
 
     for (const file of filesChanged) {
       const fileName = file.split('/').pop() ?? file;
@@ -118,13 +113,40 @@ export class ReviewServiceImpl implements ReviewerService {
         });
       }
 
-      for (const [title, description] of Object.entries(SECURITY_SENSITIVE_PATTERNS)) {
-        securityIssues.push({
-          severity: 'critical',
-          category: 'security',
-          description: `${title}: ${description}`,
-          file,
-        });
+      if (/\.(env|env\.|secret|credential|key(\b|[sy]))/i.test(fileName)) {
+        if (!matchedPatterns.has('credentials')) {
+          matchedPatterns.add('credentials');
+          securityIssues.push({
+            severity: 'critical',
+            category: 'security',
+            description: `File "${fileName}" may contain hardcoded credentials. Review for exposed secrets.`,
+            file,
+          });
+        }
+      }
+
+      if (/\.(sql|db|database|query|migration)/i.test(fileName)) {
+        if (!matchedPatterns.has('sqli')) {
+          matchedPatterns.add('sqli');
+          securityIssues.push({
+            severity: 'major',
+            category: 'security',
+            description: `Database-related file changed: ${file}. Review for possible SQL injection risks.`,
+            file,
+          });
+        }
+      }
+
+      if (/\/auth\//i.test(file) || /\/login\//i.test(file) || /auth\./i.test(fileName)) {
+        if (!matchedPatterns.has('auth')) {
+          matchedPatterns.add('auth');
+          securityIssues.push({
+            severity: 'major',
+            category: 'security',
+            description: `Auth module changed: ${file}. Review authentication and session handling logic.`,
+            file,
+          });
+        }
       }
     }
 
@@ -150,7 +172,6 @@ export class ReviewServiceImpl implements ReviewerService {
 
   private checkAntiPatterns(filesChanged: string[]): ReviewIssue[] {
     const issues: ReviewIssue[] = [];
-    const antiPatternNames = Object.keys(ANTI_PATTERN_CATEGORIES);
 
     for (const file of filesChanged) {
       if (/\.(css|scss|less)$/i.test(file)) {
@@ -176,7 +197,7 @@ export class ReviewServiceImpl implements ReviewerService {
       issues.push({
         severity: 'major',
         category: 'maintainability',
-        description: `Potential ${antiPatternNames[0] ?? 'anti-pattern'}: ${filesChanged.length} files changed. Consider splitting into smaller, focused PRs.`,
+        description: `Potential anti-pattern: ${filesChanged.length} files changed. Consider splitting into smaller, focused PRs.`,
       });
     }
 
@@ -184,7 +205,7 @@ export class ReviewServiceImpl implements ReviewerService {
       issues.push({
         severity: 'critical',
         category: 'architecture',
-        description: `${antiPatternNames[2] ?? 'Missing error handling'} risk: very large changeset (${filesChanged.length} files). High risk of unintended side effects.`,
+        description: `Missing error handling risk: very large changeset (${filesChanged.length} files). High risk of unintended side effects.`,
       });
     }
 
@@ -194,8 +215,12 @@ export class ReviewServiceImpl implements ReviewerService {
   private checkTestCoverage(filesChanged: string[], testResult: string): ReviewIssue[] {
     const issues: ReviewIssue[] = [];
 
-    const sourceFiles = filesChanged.filter((f) => MISSING_TEST_EXTENSIONS.test(f) && !/\.(test|spec)\./.test(f) && !/test(s)?\//.test(f));
-    const testFiles = filesChanged.filter((f) => /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(f) || /test(s)?\//.test(f));
+    const sourceFiles = filesChanged.filter(
+      (f) => MISSING_TEST_EXTENSIONS.test(f) && !/\.(test|spec)\./.test(f) && !/test(s)?\//.test(f),
+    );
+    const testFiles = filesChanged.filter(
+      (f) => /\.(test|spec)\.(ts|tsx|js|jsx)$/.test(f) || /test(s)?\//.test(f),
+    );
 
     if (sourceFiles.length > 0 && testFiles.length === 0) {
       issues.push({
@@ -228,7 +253,11 @@ export class ReviewServiceImpl implements ReviewerService {
     return issues;
   }
 
-  private checkRequirements(issueTitle: string, filesChanged: string[], testResult: string): ReviewIssue[] {
+  private checkRequirements(
+    issueTitle: string,
+    filesChanged: string[],
+    testResult: string,
+  ): ReviewIssue[] {
     const issues: ReviewIssue[] = [];
 
     if (filesChanged.length === 0) {
@@ -239,7 +268,10 @@ export class ReviewServiceImpl implements ReviewerService {
       });
     }
 
-    if (testResult.toLowerCase().includes('0 tests') || testResult.toLowerCase().includes('no tests found')) {
+    if (
+      testResult.toLowerCase().includes('0 tests') ||
+      testResult.toLowerCase().includes('no tests found')
+    ) {
       issues.push({
         severity: 'info',
         category: 'tests',
@@ -252,10 +284,20 @@ export class ReviewServiceImpl implements ReviewerService {
 
   private isTestPassing(testResult: string): boolean {
     const lower = testResult.toLowerCase();
-    if (lower.includes('fail') || lower.includes('error') || lower.includes('0 passed') || lower.includes('1 failing')) {
+    if (
+      lower.includes('fail') ||
+      lower.includes('error') ||
+      lower.includes('0 passed') ||
+      lower.includes('1 failing')
+    ) {
       return false;
     }
-    if (lower.includes('pass') || lower.includes('success') || lower.includes('tests passed') || lower.includes('all tests passed')) {
+    if (
+      lower.includes('pass') ||
+      lower.includes('success') ||
+      lower.includes('tests passed') ||
+      lower.includes('all tests passed')
+    ) {
       return true;
     }
     return !lower.includes('fail');

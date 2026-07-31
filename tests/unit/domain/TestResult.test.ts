@@ -106,11 +106,7 @@ describe('TestResult', () => {
     });
 
     it('should list all errors in failure summary', () => {
-      const result = TestResult.failure(
-        ['Error A', 'Error B', 'Error C'],
-        '3 failing',
-        500,
-      );
+      const result = TestResult.failure(['Error A', 'Error B', 'Error C'], '3 failing', 500);
       expect(result.formattedSummary).toContain('  - Error A');
       expect(result.formattedSummary).toContain('  - Error B');
       expect(result.formattedSummary).toContain('  - Error C');

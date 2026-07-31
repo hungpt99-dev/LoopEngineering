@@ -11,7 +11,7 @@ import { CONTEXT_BUILDER } from '../domain/interfaces/ContextBuilder.js';
 import { REVIEWER_SERVICE } from '../domain/interfaces/ReviewerService.js';
 import { EXECUTION_STORE } from '../domain/interfaces/ExecutionStore.js';
 import { APP_CONFIG } from '../domain/interfaces/AppConfig.js';
-import { AGENT_REGISTRY } from '../infrastructure/agents/AgentRegistry.js';
+import { AGENT_REGISTRY } from '../domain/interfaces/AgentRegistry.js';
 import { LINEAR_CLIENT_FACTORY } from '../infrastructure/linear/LinearClient.js';
 
 import { PinoLogger } from '../infrastructure/logging/PinoLogger.js';

@@ -32,19 +32,11 @@ export function createProjectCommand(): Command {
           return;
         }
 
-        const completed = results.filter(
-          (r) => r.status === IssueStatus.COMPLETED,
-        ).length;
-        const failed = results.filter(
-          (r) => r.status === IssueStatus.FAILED,
-        ).length;
+        const completed = results.filter((r) => r.status === IssueStatus.COMPLETED).length;
+        const failed = results.filter((r) => r.status === IssueStatus.FAILED).length;
 
         console.log(chalk.gray('─'.repeat(50)));
-        console.log(
-          chalk.green.bold(
-            `\n✅ Project "${name}" complete in ${durationSeconds}s`,
-          ),
-        );
+        console.log(chalk.green.bold(`\n✅ Project "${name}" complete in ${durationSeconds}s`));
         console.log(chalk.white(`   Total processed: ${results.length}`));
         console.log(chalk.green(`   Succeeded: ${completed}`));
         if (failed > 0) {

@@ -8,7 +8,7 @@ import type { IssueRepository } from '../../domain/interfaces/IssueRepository.js
 import { ISSUE_REPOSITORY } from '../../domain/interfaces/IssueRepository.js';
 import type { Logger } from '../../domain/interfaces/Logger.js';
 import { LOGGER } from '../../domain/interfaces/Logger.js';
-import { IssueStatus, Priority } from '../../domain/value-objects/IssueStatus.js';
+import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
 import type { LinearClientFactory } from './LinearClient.js';
 import { LINEAR_CLIENT_FACTORY } from './LinearClient.js';
 
@@ -91,7 +91,7 @@ async function mapSdkIssue(raw: SdkIssue): Promise<Issue> {
     title: raw.title,
     description: raw.description ?? '',
     status: mappedStatus,
-    priority: raw.priority as Priority,
+    priority: raw.priority,
     projectId: project?.id,
     projectName: project?.name,
     milestoneId: milestone?.id,
@@ -103,7 +103,7 @@ async function mapSdkIssue(raw: SdkIssue): Promise<Issue> {
     blockedByIssues: blockedByIds.filter(Boolean),
     blockingIssues: blockingIds.filter(Boolean),
     estimate: raw.estimate,
-    dueDate: raw.dueDate ? new Date(raw.dueDate) : undefined,
+    dueDate: raw.dueDate ? new Date(String(raw.dueDate)) : undefined,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     branchName: raw.branchName,
@@ -118,7 +118,7 @@ export class LinearService {
     @inject(LOGGER) private readonly logger: Logger,
   ) {}
 
-  async getWorkspace(): Promise<WorkspaceInfo> {
+  getWorkspace(): WorkspaceInfo {
     return {
       id: 'workspace',
       name: 'Linear Workspace',
@@ -172,10 +172,7 @@ ${message}`;
     await this.issueRepo.addComment(issueId, formattedMessage);
   }
 
-  async updateIssueWithExecutionResult(
-    issueId: string,
-    result: ExecutionResult,
-  ): Promise<void> {
+  async updateIssueWithExecutionResult(issueId: string, result: ExecutionResult): Promise<void> {
     const lines = [
       `### Execution Result`,
       `- **Status**: ${result.success ? 'Success' : 'Failed'}`,
@@ -242,9 +239,7 @@ ${message}`;
 
     const progress = totalIssues > 0 ? completedIssues / totalIssues : 0;
 
-    this.logger.info(
-      `Milestone ${milestoneName}: ${completedIssues}/${totalIssues} completed`,
-    );
+    this.logger.info(`Milestone ${milestoneName}: ${completedIssues}/${totalIssues} completed`);
 
     return {
       milestone,

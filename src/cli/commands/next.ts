@@ -15,7 +15,9 @@ export function createNextCommand(): Command {
         const results = await selectNext.preview(count);
 
         console.log(
-          chalk.bold.cyan(`\n📋 Next ${results.length} Recommended Issue${results.length !== 1 ? 's' : ''}`),
+          chalk.bold.cyan(
+            `\n📋 Next ${results.length} Recommended Issue${results.length !== 1 ? 's' : ''}`,
+          ),
         );
         console.log(chalk.gray('─'.repeat(70)));
 
@@ -54,13 +56,9 @@ export function createNextCommand(): Command {
               break;
           }
 
+          console.log(chalk.bold(`  ${index}. `) + chalk.whiteBright(issue.title.slice(0, 60)));
           console.log(
-            chalk.bold(`  ${index}. `) +
-              chalk.whiteBright(issue.title.slice(0, 60)),
-          );
-          console.log(
-            chalk.gray(`     ID: ${issue.id}  `) +
-              priorityColor(`Priority: ${priorityLabel}`),
+            chalk.gray(`     ID: ${issue.id}  `) + priorityColor(`Priority: ${priorityLabel}`),
           );
           console.log(chalk.gray(`     ${reason}`));
           console.log('');

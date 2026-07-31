@@ -37,17 +37,39 @@ export class ExecutionPlan {
     return new ExecutionPlan(props);
   }
 
-  get issueId(): string { return this.props.issueId; }
-  get issueTitle(): string { return this.props.issueTitle; }
-  get complexity(): Complexity { return this.props.complexity; }
-  get recommendedAgent(): string { return this.props.recommendedAgent; }
-  get confidence(): number { return this.props.confidence; }
-  get implementationSteps(): string[] { return this.props.implementationSteps; }
-  get filesToInspect(): string[] { return this.props.filesToInspect; }
-  get risks(): string[] { return this.props.risks; }
-  get dependencies(): string[] { return this.props.dependencies; }
-  get estimatedDuration(): number { return this.props.estimatedDuration; }
-  get requiresArchitectureReview(): boolean { return this.props.requiresArchitectureReview; }
+  get issueId(): string {
+    return this.props.issueId;
+  }
+  get issueTitle(): string {
+    return this.props.issueTitle;
+  }
+  get complexity(): Complexity {
+    return this.props.complexity;
+  }
+  get recommendedAgent(): string {
+    return this.props.recommendedAgent;
+  }
+  get confidence(): number {
+    return this.props.confidence;
+  }
+  get implementationSteps(): string[] {
+    return this.props.implementationSteps;
+  }
+  get filesToInspect(): string[] {
+    return this.props.filesToInspect;
+  }
+  get risks(): string[] {
+    return this.props.risks;
+  }
+  get dependencies(): string[] {
+    return this.props.dependencies;
+  }
+  get estimatedDuration(): number {
+    return this.props.estimatedDuration;
+  }
+  get requiresArchitectureReview(): boolean {
+    return this.props.requiresArchitectureReview;
+  }
 
   toJSON(): ExecutionPlanProps {
     return { ...this.props };

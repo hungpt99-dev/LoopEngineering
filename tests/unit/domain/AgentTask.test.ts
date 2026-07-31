@@ -26,15 +26,11 @@ describe('AgentTask', () => {
     });
 
     it('should throw on invalid id', () => {
-      expect(() =>
-        AgentTask.create({ ...baseProps, id: '' }),
-      ).toThrow();
+      expect(() => AgentTask.create({ ...baseProps, id: '' })).toThrow();
     });
 
     it('should throw when required fields are invalid', () => {
-      expect(() =>
-        AgentTask.create({ ...baseProps, id: '' }),
-      ).toThrow();
+      expect(() => AgentTask.create({ ...baseProps, id: '' })).toThrow();
     });
   });
 
@@ -49,7 +45,11 @@ describe('AgentTask', () => {
       expect(task.milestoneContext).toBe('Q3 Authentication milestone.');
       expect(task.dependencies).toEqual(['jsonwebtoken', 'bcrypt']);
       expect(task.filesToInspect).toEqual(['src/auth/login.ts', 'src/auth/register.ts']);
-      expect(task.implementationSteps).toEqual(['Set up JWT utility', 'Create login endpoint', 'Add middleware']);
+      expect(task.implementationSteps).toEqual([
+        'Set up JWT utility',
+        'Create login endpoint',
+        'Add middleware',
+      ]);
       expect(task.complexity).toBe(Complexity.MEDIUM);
       expect(task.branchName).toBe('feat/auth');
       expect(task.environment).toEqual({ NODE_ENV: 'test' });

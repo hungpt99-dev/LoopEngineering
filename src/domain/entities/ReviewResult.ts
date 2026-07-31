@@ -13,7 +13,8 @@ export interface ReviewResultProps {
 
 export interface ReviewIssue {
   severity: 'critical' | 'major' | 'minor' | 'info';
-  category: 'correctness' | 'architecture' | 'security' | 'performance' | 'maintainability' | 'tests';
+  category:
+    'correctness' | 'architecture' | 'security' | 'performance' | 'maintainability' | 'tests';
   description: string;
   file?: string;
   line?: number;
@@ -37,11 +38,7 @@ export class ReviewResult {
     });
   }
 
-  static requestChanges(
-    issues: ReviewIssue[],
-    suggestions: string[],
-    score: number,
-  ): ReviewResult {
+  static requestChanges(issues: ReviewIssue[], suggestions: string[], score: number): ReviewResult {
     return new ReviewResult({
       decision: ReviewDecision.REQUEST_CHANGES,
       summary: `Requested changes: ${issues.length} issue(s) found`,
@@ -51,12 +48,24 @@ export class ReviewResult {
     });
   }
 
-  get decision(): ReviewDecision { return this.props.decision; }
-  get summary(): string { return this.props.summary; }
-  get issues(): ReviewIssue[] { return this.props.issues; }
-  get suggestions(): string[] { return this.props.suggestions; }
-  get score(): number { return this.props.score; }
-  get isApproved(): boolean { return this.props.decision === ReviewDecision.APPROVED; }
+  get decision(): ReviewDecision {
+    return this.props.decision;
+  }
+  get summary(): string {
+    return this.props.summary;
+  }
+  get issues(): ReviewIssue[] {
+    return this.props.issues;
+  }
+  get suggestions(): string[] {
+    return this.props.suggestions;
+  }
+  get score(): number {
+    return this.props.score;
+  }
+  get isApproved(): boolean {
+    return this.props.decision === ReviewDecision.APPROVED;
+  }
 
   get criticalIssues(): ReviewIssue[] {
     return this.props.issues.filter((i) => i.severity === 'critical');

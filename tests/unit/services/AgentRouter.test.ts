@@ -2,7 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentRouter } from '../../../src/application/services/AgentRouter.js';
 import { Issue } from '../../../src/domain/entities/Issue.js';
 import { ExecutionPlan } from '../../../src/domain/entities/ExecutionPlan.js';
-import { IssueStatus, Priority, Complexity } from '../../../src/domain/value-objects/IssueStatus.js';
+import {
+  IssueStatus,
+  Priority,
+  Complexity,
+} from '../../../src/domain/value-objects/IssueStatus.js';
 import { AgentInfo } from '../../../src/domain/interfaces/PlannerService.js';
 
 function createIssue(overrides: Partial<{ title: string; description: string }> = {}) {
@@ -39,7 +43,12 @@ function createPlan(overrides: Partial<{ complexity: Complexity; recommendedAgen
 
 const defaultAgents: AgentInfo[] = [
   { name: 'codex', capabilities: ['simple-bug', 'quick-fix'], enabled: true, priority: 20 },
-  { name: 'opencode', capabilities: ['full-stack', 'refactoring', 'architecture'], enabled: true, priority: 15 },
+  {
+    name: 'opencode',
+    capabilities: ['full-stack', 'refactoring', 'architecture'],
+    enabled: true,
+    priority: 15,
+  },
   { name: 'claude', capabilities: ['frontend', 'react', 'design'], enabled: true, priority: 10 },
 ];
 
@@ -64,21 +73,30 @@ describe('AgentRouter', () => {
 
   describe('route', () => {
     it('should prefer codex for bug keywords', () => {
-      const issue = createIssue({ title: 'Fix login bug', description: 'There is a bug in the login flow' });
+      const issue = createIssue({
+        title: 'Fix login bug',
+        description: 'There is a bug in the login flow',
+      });
       const plan = createPlan();
       const result = router.route(issue, plan, defaultAgents);
       expect(result.name).toBe('codex');
     });
 
     it('should prefer opencode for refactor keywords', () => {
-      const issue = createIssue({ title: 'Refactor auth module', description: 'Major refactor of authentication' });
+      const issue = createIssue({
+        title: 'Refactor auth module',
+        description: 'Major refactor of authentication',
+      });
       const plan = createPlan();
       const result = router.route(issue, plan, defaultAgents);
       expect(result.name).toBe('opencode');
     });
 
     it('should prefer claude for UI/frontend keywords', () => {
-      const issue = createIssue({ title: 'Update component styles', description: 'Refactor the UI component layout and styles' });
+      const issue = createIssue({
+        title: 'Update component styles',
+        description: 'Refactor the UI component layout and styles',
+      });
       const plan = createPlan();
       const result = router.route(issue, plan, defaultAgents);
       expect(result.name).toBe('claude');
@@ -99,7 +117,10 @@ describe('AgentRouter', () => {
     });
 
     it('should pick highest priority enabled agent when no keyword matches', () => {
-      const issue = createIssue({ title: 'Generic task', description: 'Some generic description with no special keywords' });
+      const issue = createIssue({
+        title: 'Generic task',
+        description: 'Some generic description with no special keywords',
+      });
       const plan = createPlan({ recommendedAgent: '' });
       const result = router.route(issue, plan, defaultAgents);
       expect(result.name).toBe('codex');
@@ -122,11 +143,16 @@ describe('AgentRouter', () => {
       ];
       const issue = createIssue();
       const plan = createPlan();
-      expect(() => router.route(issue, plan, agents)).toThrow('No enabled agents available for routing');
+      expect(() => router.route(issue, plan, agents)).toThrow(
+        'No enabled agents available for routing',
+      );
     });
 
     it('should prefer codex for bug fix without conflicting keyword patterns', () => {
-      const issue = createIssue({ title: 'Fix the minor bug in parser', description: 'There is a hotfix needed for the patch' });
+      const issue = createIssue({
+        title: 'Fix the minor bug in parser',
+        description: 'There is a hotfix needed for the patch',
+      });
       const plan = createPlan();
       const result = router.route(issue, plan, defaultAgents);
       expect(result.name).toBe('codex');

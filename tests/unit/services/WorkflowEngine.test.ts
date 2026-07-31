@@ -67,53 +67,53 @@ describe('WorkflowEngine', () => {
   });
 
   describe('validateTransition', () => {
-    it('should return true for valid transition CREATED → ANALYZING', async () => {
-      const result = await engine.validateTransition('issue-1', 'CREATED', 'ANALYZING');
+    it('should return true for valid transition CREATED → ANALYZING', () => {
+      const result = engine.validateTransition('issue-1', 'CREATED', 'ANALYZING');
       expect(result).toBe(true);
     });
 
-    it('should return true for ANALYZING → PLANNING', async () => {
-      const result = await engine.validateTransition('issue-2', 'ANALYZING', 'PLANNING');
+    it('should return true for ANALYZING → PLANNING', () => {
+      const result = engine.validateTransition('issue-2', 'ANALYZING', 'PLANNING');
       expect(result).toBe(true);
     });
 
-    it('should return true for PLANNING → CODING', async () => {
-      const result = await engine.validateTransition('issue-3', 'PLANNING', 'CODING');
+    it('should return true for PLANNING → CODING', () => {
+      const result = engine.validateTransition('issue-3', 'PLANNING', 'CODING');
       expect(result).toBe(true);
     });
 
-    it('should return true for CODING → TESTING', async () => {
-      const result = await engine.validateTransition('issue-4', 'CODING', 'TESTING');
+    it('should return true for CODING → TESTING', () => {
+      const result = engine.validateTransition('issue-4', 'CODING', 'TESTING');
       expect(result).toBe(true);
     });
 
-    it('should return true for TESTING → REVIEWING', async () => {
-      const result = await engine.validateTransition('issue-5', 'TESTING', 'REVIEWING');
+    it('should return true for TESTING → REVIEWING', () => {
+      const result = engine.validateTransition('issue-5', 'TESTING', 'REVIEWING');
       expect(result).toBe(true);
     });
 
-    it('should return true for REVIEWING → COMPLETED', async () => {
-      const result = await engine.validateTransition('issue-6', 'REVIEWING', 'COMPLETED');
+    it('should return true for REVIEWING → COMPLETED', () => {
+      const result = engine.validateTransition('issue-6', 'REVIEWING', 'COMPLETED');
       expect(result).toBe(true);
     });
 
-    it('should return false for invalid transition CREATED → CODING', async () => {
-      const result = await engine.validateTransition('issue-7', 'CREATED', 'CODING');
+    it('should return false for invalid transition CREATED → CODING', () => {
+      const result = engine.validateTransition('issue-7', 'CREATED', 'CODING');
       expect(result).toBe(false);
     });
 
-    it('should return false for COMPLETED → any state', async () => {
-      const result = await engine.validateTransition('issue-8', 'COMPLETED', 'ANALYZING');
+    it('should return false for COMPLETED → any state', () => {
+      const result = engine.validateTransition('issue-8', 'COMPLETED', 'ANALYZING');
       expect(result).toBe(false);
     });
 
-    it('should return false for unknown source state', async () => {
-      const result = await engine.validateTransition('issue-9', 'NONEXISTENT', 'CREATED');
+    it('should return false for unknown source state', () => {
+      const result = engine.validateTransition('issue-9', 'NONEXISTENT', 'CREATED');
       expect(result).toBe(false);
     });
 
-    it('should log warning for invalid transition', async () => {
-      await engine.validateTransition('issue-10', 'CREATED', 'COMPLETED');
+    it('should log warning for invalid transition', () => {
+      engine.validateTransition('issue-10', 'CREATED', 'COMPLETED');
       expect(logger.warn).toHaveBeenCalled();
     });
   });
@@ -126,7 +126,10 @@ describe('WorkflowEngine', () => {
 
     it('should log the state advancement', async () => {
       await engine.advanceState('issue-2', IssueStatus.PLANNING);
-      expect(logger.info).toHaveBeenCalledWith('Advancing state', { issueId: 'issue-2', to: IssueStatus.PLANNING });
+      expect(logger.info).toHaveBeenCalledWith('Advancing state', {
+        issueId: 'issue-2',
+        to: IssueStatus.PLANNING,
+      });
     });
   });
 
@@ -159,8 +162,8 @@ describe('WorkflowEngine', () => {
   });
 
   describe('stop', () => {
-    it('should stop without error', async () => {
-      await expect(engine.stop()).resolves.toBeUndefined();
+    it('should stop without error', () => {
+      expect(engine.stop()).toBeUndefined();
     });
   });
 

@@ -1,6 +1,18 @@
 import { z } from 'zod';
 import { IssueStatus, Priority } from '../value-objects/IssueStatus.js';
 
+export const ISSUE_STATE_TRANSITIONS: Record<string, string[]> = {
+  [IssueStatus.CREATED]: [IssueStatus.ANALYZING],
+  [IssueStatus.ANALYZING]: [IssueStatus.PLANNING, IssueStatus.FAILED],
+  [IssueStatus.PLANNING]: [IssueStatus.CODING, IssueStatus.FAILED],
+  [IssueStatus.CODING]: [IssueStatus.TESTING, IssueStatus.FAILED],
+  [IssueStatus.TESTING]: [IssueStatus.REVIEWING, IssueStatus.RETRY, IssueStatus.FAILED],
+  [IssueStatus.REVIEWING]: [IssueStatus.COMPLETED, IssueStatus.RETRY, IssueStatus.FAILED],
+  [IssueStatus.COMPLETED]: [],
+  [IssueStatus.FAILED]: [IssueStatus.RETRY],
+  [IssueStatus.RETRY]: [IssueStatus.CODING],
+};
+
 export interface IssueProps {
   id: string;
   title: string;
@@ -55,26 +67,66 @@ export class Issue {
     return new Issue(props);
   }
 
-  get id(): string { return this.props.id; }
-  get title(): string { return this.props.title; }
-  get description(): string { return this.props.description; }
-  get status(): IssueStatus { return this.props.status; }
-  get priority(): Priority { return this.props.priority; }
-  get projectId(): string | undefined { return this.props.projectId; }
-  get projectName(): string | undefined { return this.props.projectName; }
-  get milestoneId(): string | undefined { return this.props.milestoneId; }
-  get milestoneName(): string | undefined { return this.props.milestoneName; }
-  get assigneeId(): string | undefined { return this.props.assigneeId; }
-  get labelIds(): string[] { return this.props.labelIds; }
-  get labelNames(): string[] { return this.props.labelNames; }
-  get parentId(): string | undefined { return this.props.parentId; }
-  get blockedByIssues(): string[] { return this.props.blockedByIssues; }
-  get blockingIssues(): string[] { return this.props.blockingIssues; }
-  get estimate(): number | undefined { return this.props.estimate; }
-  get dueDate(): Date | undefined { return this.props.dueDate; }
-  get createdAt(): Date { return this.props.createdAt; }
-  get updatedAt(): Date { return this.props.updatedAt; }
-  get branchName(): string | undefined { return this.props.branchName; }
+  get id(): string {
+    return this.props.id;
+  }
+  get title(): string {
+    return this.props.title;
+  }
+  get description(): string {
+    return this.props.description;
+  }
+  get status(): IssueStatus {
+    return this.props.status;
+  }
+  get priority(): Priority {
+    return this.props.priority;
+  }
+  get projectId(): string | undefined {
+    return this.props.projectId;
+  }
+  get projectName(): string | undefined {
+    return this.props.projectName;
+  }
+  get milestoneId(): string | undefined {
+    return this.props.milestoneId;
+  }
+  get milestoneName(): string | undefined {
+    return this.props.milestoneName;
+  }
+  get assigneeId(): string | undefined {
+    return this.props.assigneeId;
+  }
+  get labelIds(): string[] {
+    return this.props.labelIds;
+  }
+  get labelNames(): string[] {
+    return this.props.labelNames;
+  }
+  get parentId(): string | undefined {
+    return this.props.parentId;
+  }
+  get blockedByIssues(): string[] {
+    return this.props.blockedByIssues;
+  }
+  get blockingIssues(): string[] {
+    return this.props.blockingIssues;
+  }
+  get estimate(): number | undefined {
+    return this.props.estimate;
+  }
+  get dueDate(): Date | undefined {
+    return this.props.dueDate;
+  }
+  get createdAt(): Date {
+    return this.props.createdAt;
+  }
+  get updatedAt(): Date {
+    return this.props.updatedAt;
+  }
+  get branchName(): string | undefined {
+    return this.props.branchName;
+  }
 
   get isBlocked(): boolean {
     return this.props.blockedByIssues.length > 0;
@@ -97,18 +149,8 @@ export class Issue {
   }
 
   canTransitionTo(newStatus: IssueStatus): boolean {
-    const validTransitions: Record<IssueStatus, IssueStatus[]> = {
-      [IssueStatus.CREATED]: [IssueStatus.ANALYZING],
-      [IssueStatus.ANALYZING]: [IssueStatus.PLANNING, IssueStatus.FAILED],
-      [IssueStatus.PLANNING]: [IssueStatus.CODING, IssueStatus.FAILED],
-      [IssueStatus.CODING]: [IssueStatus.TESTING, IssueStatus.FAILED],
-      [IssueStatus.TESTING]: [IssueStatus.REVIEWING, IssueStatus.RETRY, IssueStatus.FAILED],
-      [IssueStatus.REVIEWING]: [IssueStatus.COMPLETED, IssueStatus.RETRY, IssueStatus.FAILED],
-      [IssueStatus.COMPLETED]: [],
-      [IssueStatus.FAILED]: [IssueStatus.RETRY],
-      [IssueStatus.RETRY]: [IssueStatus.CODING],
-    };
-    return validTransitions[this.props.status]?.includes(newStatus) ?? false;
+    const allowed = ISSUE_STATE_TRANSITIONS[this.props.status];
+    return allowed?.includes(newStatus) ?? false;
   }
 
   withStatus(status: IssueStatus): Issue {

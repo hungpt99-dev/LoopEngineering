@@ -30,29 +30,39 @@ export function createRunCommand(): Command {
 
       const cleanup = () => {
         if (wasRaw && process.stdin.isTTY) {
-          try { process.stdin.setRawMode(false); } catch { /* not a TTY */ }
-          try { process.stdin.pause(); } catch { /* ignore */ }
+          try {
+            process.stdin.setRawMode(false);
+          } catch {
+            /* not a TTY */
+          }
+          try {
+            process.stdin.pause();
+          } catch {
+            /* ignore */
+          }
         }
       };
 
-      const shutdown = async (target: WorkflowEngine) => {
+      const shutdown = (target: WorkflowEngine) => {
         if (forceStop) {
           console.log(chalk.red('\n🛑 Force stopping...'));
           OpenCodeProvider.killActiveProcess();
           cleanup();
           process.exit(1);
         }
-        console.log(chalk.yellow('\n⏸️  Stopping after current issue... (press Ctrl+C again to force stop)'));
+        console.log(
+          chalk.yellow('\n⏸️  Stopping after current issue... (press Ctrl+C again to force stop)'),
+        );
         OpenCodeProvider.killActiveProcess();
-        await target.stop();
+        target.stop();
         forceStop = true;
       };
 
       const onSigint = () => {
-        if (engine) shutdown(engine);
+        if (engine) void shutdown(engine);
       };
       const onSigterm = () => {
-        if (engine) shutdown(engine);
+        if (engine) void shutdown(engine);
       };
 
       try {
@@ -70,7 +80,7 @@ export function createRunCommand(): Command {
           process.stdin.setRawMode(true);
           process.stdin.on('keypress', (_str: string, key: readline.Key) => {
             if (key.ctrl && key.name === 'c') {
-              if (engine) shutdown(engine);
+              if (engine) void shutdown(engine);
             }
           });
         }

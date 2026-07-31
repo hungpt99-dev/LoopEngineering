@@ -27,9 +27,7 @@ export function validateEnv(): Env {
   const result = EnvSchema.safeParse(process.env);
 
   if (!result.success) {
-    const missingKey = result.error.issues.find(
-      (issue) => issue.path.includes('LINEAR_API_KEY'),
-    );
+    const missingKey = result.error.issues.find((issue) => issue.path.includes('LINEAR_API_KEY'));
 
     if (missingKey) {
       throw new Error(

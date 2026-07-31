@@ -1,8 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { inject, injectable } from 'tsyringe';
 import { ExecutionHistory } from '../../domain/entities/ExecutionHistory.js';
-import type { ExecutionHistoryProps, ExecutionRetryProps } from '../../domain/entities/ExecutionHistory.js';
-import type { ExecutionStore } from '../../domain/interfaces/ExecutionStore.js';
+import type { ExecutionRetryProps } from '../../domain/entities/ExecutionHistory.js';
+import type {
+  CreateExecutionRecordInput,
+  ExecutionStore,
+  UpdateExecutionRecordInput,
+} from '../../domain/interfaces/ExecutionStore.js';
 import type { Logger } from '../../domain/interfaces/Logger.js';
 import { LOGGER } from '../../domain/interfaces/Logger.js';
 import { IssueStatus } from '../../domain/value-objects/IssueStatus.js';
@@ -16,9 +20,7 @@ export class SQLiteExecutionStore implements ExecutionStore {
     this.logger.info('SQLiteExecutionStore initialized');
   }
 
-  async save(
-    record: Omit<ExecutionHistoryProps, 'id' | 'createdAt' | 'updatedAt'>,
-  ): Promise<ExecutionHistory> {
+  async save(record: CreateExecutionRecordInput): Promise<ExecutionHistory> {
     try {
       const created = await this.prisma.executionRecord.create({
         data: {
@@ -71,10 +73,7 @@ export class SQLiteExecutionStore implements ExecutionStore {
 
       return records.map((r) => this.mapToDomain(r, r.retries));
     } catch (error) {
-      this.logger.error(
-        `Failed to find execution records by issue: ${issueId}`,
-        error as Error,
-      );
+      this.logger.error(`Failed to find execution records by issue: ${issueId}`, error as Error);
       throw error;
     }
   }
@@ -89,10 +88,7 @@ export class SQLiteExecutionStore implements ExecutionStore {
 
       return records.map((r) => this.mapToDomain(r, r.retries));
     } catch (error) {
-      this.logger.error(
-        `Failed to find execution records by status: ${status}`,
-        error as Error,
-      );
+      this.logger.error(`Failed to find execution records by status: ${status}`, error as Error);
       throw error;
     }
   }
@@ -112,10 +108,7 @@ export class SQLiteExecutionStore implements ExecutionStore {
     }
   }
 
-  async update(
-    id: string,
-    data: Partial<ExecutionHistoryProps>,
-  ): Promise<ExecutionHistory> {
+  async update(id: string, data: UpdateExecutionRecordInput): Promise<ExecutionHistory> {
     try {
       const updateData: Record<string, unknown> = {};
 
@@ -140,10 +133,7 @@ export class SQLiteExecutionStore implements ExecutionStore {
       this.logger.info(`Updated execution record: ${id}`);
       return this.mapToDomain(updated, updated.retries);
     } catch (error) {
-      this.logger.error(
-        `Failed to update execution record: ${id}`,
-        error as Error,
-      );
+      this.logger.error(`Failed to update execution record: ${id}`, error as Error);
       throw error;
     }
   }
@@ -163,14 +153,9 @@ export class SQLiteExecutionStore implements ExecutionStore {
         },
       });
 
-      this.logger.info(
-        `Added retry attempt ${retry.attempt} to record ${recordId}`,
-      );
+      this.logger.info(`Added retry attempt ${retry.attempt} to record ${recordId}`);
     } catch (error) {
-      this.logger.error(
-        `Failed to add retry to record: ${recordId}`,
-        error as Error,
-      );
+      this.logger.error(`Failed to add retry to record: ${recordId}`, error as Error);
       throw error;
     }
   }
@@ -203,7 +188,7 @@ export class SQLiteExecutionStore implements ExecutionStore {
     }[],
   ): ExecutionHistory {
     const mappedStatus =
-      Object.values(IssueStatus).find((s) => s === record.status) ??
+      Object.values(IssueStatus).find((s) => (s as string) === record.status) ??
       IssueStatus.CREATED;
 
     const mappedRetries: ExecutionRetryProps[] = retries.map((r) => ({

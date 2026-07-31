@@ -46,7 +46,10 @@ export class SelectNextIssue {
       results.push({ issue, reason });
     }
 
-    this.logger.info('Previewed next issues', { count: results.length, totalEligible: eligible.length });
+    this.logger.info('Previewed next issues', {
+      count: results.length,
+      totalEligible: eligible.length,
+    });
     return results;
   }
 

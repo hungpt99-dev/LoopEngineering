@@ -4,17 +4,12 @@ import { CodingAgentProvider } from '../../../domain/interfaces/CodingAgentProvi
 import { AgentTask } from '../../../domain/entities/AgentTask.js';
 import { AgentExecutionResult } from '../../../domain/entities/AgentExecutionResult.js';
 import { Logger, LOGGER } from '../../../domain/interfaces/Logger.js';
+import { getChangedFiles } from '../shared/git.js';
 
 @injectable()
 export class ClaudeCodeProvider implements CodingAgentProvider {
   readonly name = 'claude';
-  readonly capabilities = [
-    'frontend',
-    'react',
-    'design',
-    'architecture',
-    'full-stack',
-  ];
+  readonly capabilities = ['frontend', 'react', 'design', 'architecture', 'full-stack'];
 
   constructor(@inject(LOGGER) private readonly logger: Logger) {}
 
@@ -34,7 +29,7 @@ export class ClaudeCodeProvider implements CodingAgentProvider {
       });
 
       const duration = Math.round(performance.now() - startTime);
-      const filesChanged = await this.getChangedFiles();
+      const filesChanged = await getChangedFiles();
 
       this.logger.info('Claude Code task completed', {
         taskId: task.id,
@@ -52,8 +47,7 @@ export class ClaudeCodeProvider implements CodingAgentProvider {
       });
     } catch (error: unknown) {
       const duration = Math.round(performance.now() - startTime);
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
 
       this.logger.error('Claude Code task failed', error instanceof Error ? error : undefined, {
         taskId: task.id,
@@ -81,7 +75,7 @@ export class ClaudeCodeProvider implements CodingAgentProvider {
     }
   }
 
-  async validateEnvironment(): Promise<string[]> {
+  validateEnvironment(): string[] {
     const issues: string[] = [];
 
     if (!process.env.ANTHROPIC_API_KEY) {
@@ -89,19 +83,5 @@ export class ClaudeCodeProvider implements CodingAgentProvider {
     }
 
     return issues;
-  }
-
-  private async getChangedFiles(): Promise<string[]> {
-    try {
-      const { stdout } = await execa('git', ['diff', '--name-only', 'HEAD'], {
-        reject: false,
-      });
-      return stdout
-        .trim()
-        .split('\n')
-        .filter((line) => line.length > 0);
-    } catch {
-      return [];
-    }
   }
 }

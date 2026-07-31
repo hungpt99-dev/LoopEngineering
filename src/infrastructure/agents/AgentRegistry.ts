@@ -1,11 +1,13 @@
 import { injectable, inject, injectAll } from 'tsyringe';
-import { CodingAgentProvider, CODING_AGENT_PROVIDER } from '../../domain/interfaces/CodingAgentProvider.js';
+import {
+  CodingAgentProvider,
+  CODING_AGENT_PROVIDER,
+} from '../../domain/interfaces/CodingAgentProvider.js';
 import { Logger, LOGGER } from '../../domain/interfaces/Logger.js';
-
-export const AGENT_REGISTRY = Symbol('AgentRegistry');
+import type { IAgentRegistry } from '../../domain/interfaces/AgentRegistry.js';
 
 @injectable()
-export class AgentRegistry {
+export class AgentRegistry implements IAgentRegistry {
   private readonly providers: Map<string, CodingAgentProvider> = new Map();
 
   constructor(
@@ -38,9 +40,7 @@ export class AgentRegistry {
       }),
     );
 
-    return results
-      .filter(({ available }) => available)
-      .map(({ provider }) => provider);
+    return results.filter(({ available }) => available).map(({ provider }) => provider);
   }
 
   getProviderNames(): string[] {

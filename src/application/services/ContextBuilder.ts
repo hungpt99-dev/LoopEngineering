@@ -6,7 +6,8 @@ import { IssueRepository, ISSUE_REPOSITORY } from '../../domain/interfaces/Issue
 import { Logger, LOGGER } from '../../domain/interfaces/Logger.js';
 
 const ISSUE_REF_PATTERN = /[A-Z]+-\d+/g;
-const FILE_PATH_PATTERN = /(?:src\/|lib\/|app\/|components\/|pages\/|utils\/|hooks\/|services\/|models\/|controllers\/|middleware\/)[\w\/.-]+\.(?:ts|tsx|js|jsx|py|go|rs|java|rb|css|scss|html|json|yaml|yml)/gi;
+const FILE_PATH_PATTERN =
+  /(?:src\/|lib\/|app\/|components\/|pages\/|utils\/|hooks\/|services\/|models\/|controllers\/|middleware\/)[\w/.-]+\.(?:ts|tsx|js|jsx|py|go|rs|java|rb|css|scss|html|json|yaml|yml)/gi;
 const EXTENSION_KEYWORD_MAP: Record<string, RegExp[]> = {
   '.ts': [/typescript|type|interface|enum|generic/i],
   '.tsx': [/component|react|jsx|props|state|hook/i],
@@ -138,7 +139,10 @@ export class ContextBuilderImpl implements ContextBuilder {
       sections.push(`\n### Milestones`);
       sections.push(
         milestones
-          .map((m) => `- **${m.name}**: ${Math.round(m.progress * 100)}% complete${m.targetDate ? ` (target: ${m.targetDate.toISOString().slice(0, 10)})` : ''}`)
+          .map(
+            (m) =>
+              `- **${m.name}**: ${Math.round(m.progress * 100)}% complete${m.targetDate ? ` (target: ${m.targetDate.toISOString().slice(0, 10)})` : ''}`,
+          )
           .join('\n'),
       );
     }
@@ -179,11 +183,7 @@ export class ContextBuilderImpl implements ContextBuilder {
     const issues = await this.issueRepository.findByMilestoneId(milestoneId);
     if (issues.length > 0) {
       sections.push(`\n### Issues (${issues.length})`);
-      sections.push(
-        issues
-          .map((i) => `- **${i.id}**: ${i.title} [${i.status}]`)
-          .join('\n'),
-      );
+      sections.push(issues.map((i) => `- **${i.id}**: ${i.title} [${i.status}]`).join('\n'));
     }
 
     return sections.join('\n');
@@ -235,7 +235,7 @@ export class ContextBuilderImpl implements ContextBuilder {
     return parts.join('\n\n');
   }
 
-  async detectDependencies(issue: Issue): Promise<string[]> {
+  detectDependencies(issue: Issue): string[] {
     const dependencies: string[] = [];
     const desc = issue.description;
     const title = issue.title;
@@ -257,7 +257,9 @@ export class ContextBuilderImpl implements ContextBuilder {
       }
     }
 
-    const componentMentions = combined.matchAll(/\b(?:depends on|requires|needs|after|before|integrates with|extends|implements|uses)\s+([A-Z][\w]+(?:Service|Provider|Repository|Controller|Component|Module|Handler|Middleware|Store|Hook|Util))/g);
+    const componentMentions = combined.matchAll(
+      /\b(?:depends on|requires|needs|after|before|integrates with|extends|implements|uses)\s+([A-Z][\w]+(?:Service|Provider|Repository|Controller|Component|Module|Handler|Middleware|Store|Hook|Util))/g,
+    );
     for (const match of componentMentions) {
       const component = match[1];
       if (component && !dependencies.includes(component)) {
@@ -268,7 +270,7 @@ export class ContextBuilderImpl implements ContextBuilder {
     return dependencies;
   }
 
-  async identifyFiles(issue: Issue): Promise<string[]> {
+  identifyFiles(issue: Issue): string[] {
     const files = new Set<string>();
     const desc = `${issue.title} ${issue.description}`.toLowerCase();
 

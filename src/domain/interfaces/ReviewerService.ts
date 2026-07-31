@@ -7,7 +7,7 @@ export interface ReviewerService {
     filesChanged: string[],
     testResult: string,
   ): Promise<ReviewResult>;
-  suggestFixes(issues: ReviewIssue[]): Promise<string[]>;
+  suggestFixes(issues: ReviewIssue[]): string[];
 }
 
 export const REVIEWER_SERVICE = Symbol('ReviewerService');

@@ -32,15 +32,33 @@ export class Project {
     return new Project(props);
   }
 
-  get id(): string { return this.props.id; }
-  get name(): string { return this.props.name; }
-  get description(): string { return this.props.description; }
-  get state(): string { return this.props.state; }
-  get progress(): number { return this.props.progress; }
-  get startDate(): Date | undefined { return this.props.startDate; }
-  get targetDate(): Date | undefined { return this.props.targetDate; }
-  get teamId(): string { return this.props.teamId; }
-  get milestoneIds(): string[] { return this.props.milestoneIds; }
+  get id(): string {
+    return this.props.id;
+  }
+  get name(): string {
+    return this.props.name;
+  }
+  get description(): string {
+    return this.props.description;
+  }
+  get state(): string {
+    return this.props.state;
+  }
+  get progress(): number {
+    return this.props.progress;
+  }
+  get startDate(): Date | undefined {
+    return this.props.startDate;
+  }
+  get targetDate(): Date | undefined {
+    return this.props.targetDate;
+  }
+  get teamId(): string {
+    return this.props.teamId;
+  }
+  get milestoneIds(): string[] {
+    return this.props.milestoneIds;
+  }
 
   toJSON(): ProjectProps {
     return { ...this.props };

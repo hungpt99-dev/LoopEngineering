@@ -39,18 +39,42 @@ export class AgentTask {
     return new AgentTask(props);
   }
 
-  get id(): string { return this.props.id; }
-  get issueId(): string { return this.props.issueId; }
-  get issueTitle(): string { return this.props.issueTitle; }
-  get issueDescription(): string { return this.props.issueDescription; }
-  get projectContext(): string | undefined { return this.props.projectContext; }
-  get milestoneContext(): string | undefined { return this.props.milestoneContext; }
-  get dependencies(): string[] { return this.props.dependencies; }
-  get filesToInspect(): string[] { return this.props.filesToInspect; }
-  get implementationSteps(): string[] { return this.props.implementationSteps; }
-  get complexity(): Complexity { return this.props.complexity; }
-  get branchName(): string { return this.props.branchName; }
-  get environment(): Record<string, string> { return this.props.environment; }
+  get id(): string {
+    return this.props.id;
+  }
+  get issueId(): string {
+    return this.props.issueId;
+  }
+  get issueTitle(): string {
+    return this.props.issueTitle;
+  }
+  get issueDescription(): string {
+    return this.props.issueDescription;
+  }
+  get projectContext(): string | undefined {
+    return this.props.projectContext;
+  }
+  get milestoneContext(): string | undefined {
+    return this.props.milestoneContext;
+  }
+  get dependencies(): string[] {
+    return this.props.dependencies;
+  }
+  get filesToInspect(): string[] {
+    return this.props.filesToInspect;
+  }
+  get implementationSteps(): string[] {
+    return this.props.implementationSteps;
+  }
+  get complexity(): Complexity {
+    return this.props.complexity;
+  }
+  get branchName(): string {
+    return this.props.branchName;
+  }
+  get environment(): Record<string, string> {
+    return this.props.environment;
+  }
 
   get fullContext(): string {
     const parts: string[] = [];
@@ -62,7 +86,9 @@ export class AgentTask {
     }
     parts.push(`## Issue\n${this.props.issueTitle}\n\n${this.props.issueDescription}`);
     if (this.props.implementationSteps.length > 0) {
-      parts.push(`## Implementation Plan\n${this.props.implementationSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`);
+      parts.push(
+        `## Implementation Plan\n${this.props.implementationSteps.map((s, i) => `${i + 1}. ${s}`).join('\n')}`,
+      );
     }
     if (this.props.filesToInspect.length > 0) {
       parts.push(`## Relevant Files\n${this.props.filesToInspect.join('\n')}`);

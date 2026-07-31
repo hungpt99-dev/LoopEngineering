@@ -6,8 +6,6 @@ import yaml from 'yaml';
 import { z } from 'zod';
 import type { AppConfig as AppConfigInterface } from '../../domain/interfaces/AppConfig.js';
 
-export const APP_CONFIG = Symbol('AppConfig');
-
 const AgentsConfigSchema = z.record(
   z.string(),
   z.object({
@@ -132,7 +130,7 @@ export class ConfigLoader {
 
     try {
       const raw = readFileSync(configPath, 'utf-8');
-      fileConfig = yaml.parse(raw) ?? {};
+      fileConfig = (yaml.parse(raw) as Record<string, unknown>) ?? {};
     } catch {
       console.warn(`Config file not found at ${configPath}, using defaults`);
     }

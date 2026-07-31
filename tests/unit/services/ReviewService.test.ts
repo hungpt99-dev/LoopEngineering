@@ -71,7 +71,9 @@ describe('ReviewServiceImpl', () => {
       const result = await service.reviewChanges('issue-3', 'Big refactor', files, testResult);
       expect(result.decision).toBe(ReviewDecision.REQUEST_CHANGES);
       const antiPattern = result.issues.find(
-        (i) => i.category === 'maintainability' || (i.category === 'architecture' && i.severity === 'major'),
+        (i) =>
+          i.category === 'maintainability' ||
+          (i.category === 'architecture' && i.severity === 'major'),
       );
       expect(antiPattern).toBeDefined();
     });
@@ -91,9 +93,7 @@ describe('ReviewServiceImpl', () => {
       const testResult = 'All tests passed';
       const result = await service.reviewChanges('issue-5', 'Auth update', files, testResult);
       expect(result.decision).toBe(ReviewDecision.REQUEST_CHANGES);
-      const securityIssue = result.issues.find(
-        (i) => i.category === 'security',
-      );
+      const securityIssue = result.issues.find((i) => i.category === 'security');
       expect(securityIssue).toBeDefined();
     });
 
@@ -149,65 +149,98 @@ describe('ReviewServiceImpl', () => {
   });
 
   describe('suggestFixes', () => {
-    it('should generate fix suggestion for security issues', async () => {
+    it('should generate fix suggestion for security issues', () => {
       const issues = [
-        { severity: 'critical' as const, category: 'security' as const, description: 'Hardcoded secret found', file: 'auth.ts' },
+        {
+          severity: 'critical' as const,
+          category: 'security' as const,
+          description: 'Hardcoded secret found',
+          file: 'auth.ts',
+        },
       ];
-      const suggestions = await service.suggestFixes(issues);
+      const suggestions = service.suggestFixes(issues);
       expect(suggestions).toHaveLength(1);
       expect(suggestions[0]).toContain('[SECURITY]');
       expect(suggestions[0]).toContain('Hardcoded secret found');
       expect(suggestions[0]).toContain('auth.ts');
     });
 
-    it('should generate fix suggestion for correctness issues', async () => {
+    it('should generate fix suggestion for correctness issues', () => {
       const issues = [
-        { severity: 'critical' as const, category: 'correctness' as const, description: 'Missing implementation', file: 'src/feat.ts' },
+        {
+          severity: 'critical' as const,
+          category: 'correctness' as const,
+          description: 'Missing implementation',
+          file: 'src/feat.ts',
+        },
       ];
-      const suggestions = await service.suggestFixes(issues);
+      const suggestions = service.suggestFixes(issues);
       expect(suggestions).toHaveLength(1);
       expect(suggestions[0]).toContain('[CORRECTNESS]');
     });
 
-    it('should generate fix suggestion for architecture issues', async () => {
+    it('should generate fix suggestion for architecture issues', () => {
       const issues = [
-        { severity: 'major' as const, category: 'architecture' as const, description: 'God object detected', file: 'src/handler.ts' },
+        {
+          severity: 'major' as const,
+          category: 'architecture' as const,
+          description: 'God object detected',
+          file: 'src/handler.ts',
+        },
       ];
-      const suggestions = await service.suggestFixes(issues);
+      const suggestions = service.suggestFixes(issues);
       expect(suggestions[0]).toContain('[ARCHITECTURE]');
     });
 
-    it('should generate fix suggestion for performance issues', async () => {
+    it('should generate fix suggestion for performance issues', () => {
       const issues = [
         { severity: 'minor' as const, category: 'performance' as const, description: 'N+1 query' },
       ];
-      const suggestions = await service.suggestFixes(issues);
+      const suggestions = service.suggestFixes(issues);
       expect(suggestions[0]).toContain('[PERFORMANCE]');
     });
 
-    it('should generate fix suggestion for maintainability issues', async () => {
+    it('should generate fix suggestion for maintainability issues', () => {
       const issues = [
-        { severity: 'info' as const, category: 'maintainability' as const, description: 'Long function', file: 'src/util.ts' },
+        {
+          severity: 'info' as const,
+          category: 'maintainability' as const,
+          description: 'Long function',
+          file: 'src/util.ts',
+        },
       ];
-      const suggestions = await service.suggestFixes(issues);
+      const suggestions = service.suggestFixes(issues);
       expect(suggestions[0]).toContain('[MAINTAINABILITY]');
     });
 
-    it('should generate fix suggestion for test issues', async () => {
+    it('should generate fix suggestion for test issues', () => {
       const issues = [
-        { severity: 'major' as const, category: 'tests' as const, description: 'Missing test coverage' },
+        {
+          severity: 'major' as const,
+          category: 'tests' as const,
+          description: 'Missing test coverage',
+        },
       ];
-      const suggestions = await service.suggestFixes(issues);
+      const suggestions = service.suggestFixes(issues);
       expect(suggestions[0]).toContain('[TESTS]');
     });
 
-    it('should generate multiple suggestions for multiple issues', async () => {
+    it('should generate multiple suggestions for multiple issues', () => {
       const issues = [
-        { severity: 'critical' as const, category: 'security' as const, description: 'Secret leak', file: '.env' },
+        {
+          severity: 'critical' as const,
+          category: 'security' as const,
+          description: 'Secret leak',
+          file: '.env',
+        },
         { severity: 'major' as const, category: 'tests' as const, description: 'No tests' },
-        { severity: 'minor' as const, category: 'maintainability' as const, description: 'Naming issue' },
+        {
+          severity: 'minor' as const,
+          category: 'maintainability' as const,
+          description: 'Naming issue',
+        },
       ];
-      const suggestions = await service.suggestFixes(issues);
+      const suggestions = service.suggestFixes(issues);
       expect(suggestions).toHaveLength(3);
     });
   });

@@ -26,12 +26,24 @@ export class Milestone {
     return new Milestone(props);
   }
 
-  get id(): string { return this.props.id; }
-  get name(): string { return this.props.name; }
-  get description(): string { return this.props.description; }
-  get projectId(): string { return this.props.projectId; }
-  get targetDate(): Date | undefined { return this.props.targetDate; }
-  get progress(): number { return this.props.progress; }
+  get id(): string {
+    return this.props.id;
+  }
+  get name(): string {
+    return this.props.name;
+  }
+  get description(): string {
+    return this.props.description;
+  }
+  get projectId(): string {
+    return this.props.projectId;
+  }
+  get targetDate(): Date | undefined {
+    return this.props.targetDate;
+  }
+  get progress(): number {
+    return this.props.progress;
+  }
 
   toJSON(): MilestoneProps {
     return { ...this.props };

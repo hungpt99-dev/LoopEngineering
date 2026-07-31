@@ -168,10 +168,7 @@ export class GitManager implements GitRepository {
         await this.checkoutBranch(currentBranch);
       }
     } catch (error) {
-      this.logger.error(
-        `Failed to merge ${branchName} into ${defaultBranch}`,
-        error as Error,
-      );
+      this.logger.error(`Failed to merge ${branchName} into ${defaultBranch}`, error as Error);
       throw error;
     }
   }

@@ -1,20 +1,16 @@
 import { injectable, inject } from 'tsyringe';
+import { execSync } from 'node:child_process';
 import { execa, type ResultPromise } from 'execa';
 import { CodingAgentProvider } from '../../../domain/interfaces/CodingAgentProvider.js';
 import { AgentTask } from '../../../domain/entities/AgentTask.js';
 import { AgentExecutionResult } from '../../../domain/entities/AgentExecutionResult.js';
 import { Logger, LOGGER } from '../../../domain/interfaces/Logger.js';
+import { getChangedFiles } from '../shared/git.js';
 
 @injectable()
 export class OpenCodeProvider implements CodingAgentProvider {
   readonly name = 'opencode';
-  readonly capabilities = [
-    'full-stack',
-    'refactoring',
-    'architecture',
-    'backend',
-    'testing',
-  ];
+  readonly capabilities = ['full-stack', 'refactoring', 'architecture', 'backend', 'testing'];
 
   private static activeProcess: ResultPromise | null = null;
   private static activePid: number | null = null;
@@ -26,14 +22,18 @@ export class OpenCodeProvider implements CodingAgentProvider {
       } catch {
         try {
           process.kill(OpenCodeProvider.activePid, 'SIGKILL');
-        } catch { /* already dead */ }
+        } catch {
+          /* already dead */
+        }
       }
       OpenCodeProvider.activePid = null;
     }
     if (OpenCodeProvider.activeProcess) {
       try {
         OpenCodeProvider.activeProcess.kill('SIGKILL');
-      } catch { /* already dead */ }
+      } catch {
+        /* already dead */
+      }
       OpenCodeProvider.activeProcess = null;
     }
   }
@@ -69,7 +69,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
       OpenCodeProvider.activePid = null;
 
       const duration = Math.round(performance.now() - startTime);
-      const filesChanged = await this.getChangedFiles();
+      const filesChanged = await getChangedFiles();
 
       this.logger.info('OpenCode task completed', {
         taskId: task.id,
@@ -89,8 +89,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
       OpenCodeProvider.activeProcess = null;
       OpenCodeProvider.activePid = null;
       const duration = Math.round(performance.now() - startTime);
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
 
       this.logger.error('OpenCode task failed', error instanceof Error ? error : undefined, {
         taskId: task.id,
@@ -118,7 +117,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
     }
   }
 
-  async validateEnvironment(): Promise<string[]> {
+  validateEnvironment(): string[] {
     const issues: string[] = [];
 
     if (!process.env.OPENAI_API_KEY) {
@@ -126,28 +125,12 @@ export class OpenCodeProvider implements CodingAgentProvider {
     }
 
     try {
-      const { stdout } = await execa('opencode', ['--version'], {
-        reject: false,
-      });
+      const stdout = execSync('opencode --version', { encoding: 'utf-8' });
       this.logger.info(`OpenCode version: ${stdout.trim()}`);
     } catch {
       issues.push('opencode CLI version check failed');
     }
 
     return issues;
-  }
-
-  private async getChangedFiles(): Promise<string[]> {
-    try {
-      const { stdout } = await execa('git', ['diff', '--name-only', 'HEAD'], {
-        reject: false,
-      });
-      return stdout
-        .trim()
-        .split('\n')
-        .filter((line) => line.length > 0);
-    } catch {
-      return [];
-    }
   }
 }

@@ -26,7 +26,11 @@ export class TestExecutor implements TestRunner {
     if (testPattern) {
       args.push('--', '-t', testPattern);
     }
-    return this.executeTest('npm', args, testPattern ? `tests matching "${testPattern}"` : 'specific tests');
+    return this.executeTest(
+      'npm',
+      args,
+      testPattern ? `tests matching "${testPattern}"` : 'specific tests',
+    );
   }
 
   async getCoverageReport(): Promise<string | null> {
@@ -156,7 +160,8 @@ export class TestExecutor implements TestRunner {
 
   private parseErrors(output: string): string[] {
     const errors: string[] = [];
-    const stripped = output.replace(/\u001b\[[0-9;]*m/g, '');
+    const ansiPattern = new RegExp('\u001b' + String.raw`\[[\d;]*m`, 'g');
+    const stripped = output.replace(ansiPattern, '');
     const lines = stripped.split('\n');
 
     for (let i = 0; i < lines.length && errors.length < 50; i++) {

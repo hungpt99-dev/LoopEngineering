@@ -4,17 +4,12 @@ import { CodingAgentProvider } from '../../../domain/interfaces/CodingAgentProvi
 import { AgentTask } from '../../../domain/entities/AgentTask.js';
 import { AgentExecutionResult } from '../../../domain/entities/AgentExecutionResult.js';
 import { Logger, LOGGER } from '../../../domain/interfaces/Logger.js';
+import { getChangedFiles } from '../shared/git.js';
 
 @injectable()
 export class CodexProvider implements CodingAgentProvider {
   readonly name = 'codex';
-  readonly capabilities = [
-    'simple-bug',
-    'quick-fix',
-    'documentation',
-    'backend',
-    'testing',
-  ];
+  readonly capabilities = ['simple-bug', 'quick-fix', 'documentation', 'backend', 'testing'];
 
   constructor(@inject(LOGGER) private readonly logger: Logger) {}
 
@@ -34,7 +29,7 @@ export class CodexProvider implements CodingAgentProvider {
       });
 
       const duration = Math.round(performance.now() - startTime);
-      const filesChanged = await this.getChangedFiles();
+      const filesChanged = await getChangedFiles();
 
       this.logger.info('Codex task completed', {
         taskId: task.id,
@@ -52,8 +47,7 @@ export class CodexProvider implements CodingAgentProvider {
       });
     } catch (error: unknown) {
       const duration = Math.round(performance.now() - startTime);
-      const message =
-        error instanceof Error ? error.message : 'Unknown error occurred';
+      const message = error instanceof Error ? error.message : 'Unknown error occurred';
 
       this.logger.error('Codex task failed', error instanceof Error ? error : undefined, {
         taskId: task.id,
@@ -86,7 +80,7 @@ export class CodexProvider implements CodingAgentProvider {
     }
   }
 
-  async validateEnvironment(): Promise<string[]> {
+  validateEnvironment(): string[] {
     const issues: string[] = [];
 
     if (!process.env.OPENAI_API_KEY) {
@@ -94,19 +88,5 @@ export class CodexProvider implements CodingAgentProvider {
     }
 
     return issues;
-  }
-
-  private async getChangedFiles(): Promise<string[]> {
-    try {
-      const { stdout } = await execa('git', ['diff', '--name-only', 'HEAD'], {
-        reject: false,
-      });
-      return stdout
-        .trim()
-        .split('\n')
-        .filter((line) => line.length > 0);
-    } catch {
-      return [];
-    }
   }
 }

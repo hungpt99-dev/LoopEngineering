@@ -6,8 +6,8 @@ export interface ContextBuilder {
   buildProjectContext(projectId: string): Promise<string>;
   buildMilestoneContext(projectId: string, milestoneId: string): Promise<string>;
   buildFullContext(issue: Issue, plan: ExecutionPlan): Promise<string>;
-  detectDependencies(issue: Issue): Promise<string[]>;
-  identifyFiles(issue: Issue): Promise<string[]>;
+  detectDependencies(issue: Issue): string[];
+  identifyFiles(issue: Issue): string[];
 }
 
 export const CONTEXT_BUILDER = Symbol('ContextBuilder');

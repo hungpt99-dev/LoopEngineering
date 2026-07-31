@@ -4,13 +4,9 @@ import { Complexity } from '../value-objects/IssueStatus.js';
 
 export interface PlannerService {
   analyzeIssue(issue: Issue): Promise<ExecutionPlan>;
-  selectAgent(
-    issue: Issue,
-    plan: ExecutionPlan,
-    availableAgents: AgentInfo[],
-  ): Promise<string>;
-  planImplementation(issue: Issue): Promise<string[]>;
-  estimateComplexity(issue: Issue): Promise<Complexity>;
+  selectAgent(issue: Issue, plan: ExecutionPlan, availableAgents: AgentInfo[]): string;
+  planImplementation(issue: Issue): string[];
+  estimateComplexity(issue: Issue): Complexity;
 }
 
 export interface AgentInfo {

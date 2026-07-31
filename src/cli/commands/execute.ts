@@ -42,11 +42,7 @@ export function createExecuteCommand(): Command {
         console.log(chalk.gray('─'.repeat(50)));
 
         if (result.status === IssueStatus.COMPLETED) {
-          console.log(
-            chalk.green.bold(
-              `\n✅ Issue ${issueId} completed in ${durationSeconds}s`,
-            ),
-          );
+          console.log(chalk.green.bold(`\n✅ Issue ${issueId} completed in ${durationSeconds}s`));
           console.log(chalk.gray(`   Agent: ${result.agentUsed}`));
           if (result.branch) {
             console.log(chalk.gray(`   Branch: ${result.branch}`));

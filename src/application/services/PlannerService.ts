@@ -9,7 +9,8 @@ import { Logger, LOGGER } from '../../domain/interfaces/Logger.js';
 
 const REACT_KEYWORDS = /component|ui|react|vue|angular|frontend|css|style|layout|render|jsx|tsx/i;
 const BUG_KEYWORDS = /\bbug\b|\bfix\b|\bpatch\b|\bhotfix\b|\berror\b|\bcrash\b|\bbroken\b/i;
-const REFACTOR_KEYWORDS = /\brefactor\b|\barchitecture\b|\bredesign\b|\brestructure\b|\bmigrate\b|\boverhaul\b/i;
+const REFACTOR_KEYWORDS =
+  /\brefactor\b|\barchitecture\b|\bredesign\b|\brestructure\b|\bmigrate\b|\boverhaul\b/i;
 const STEP_DELIMITERS = /(?:\r?\n\s*(?:\d+[.)]\s*|[-*]\s))|(?:\r?\n\s*\r?\n)/;
 
 @injectable()
@@ -25,20 +26,23 @@ export class PlannerServiceImpl implements PlannerService {
 
     const existing = await this.issueRepository.findById(issue.id);
     if (!existing) {
-      this.logger.warn('Issue not found in repository, proceeding with provided data', { issueId: issue.id });
+      this.logger.warn('Issue not found in repository, proceeding with provided data', {
+        issueId: issue.id,
+      });
     }
 
-    const [steps, dependencies, files] = await Promise.all([
+    const [steps, dependencies, files] = [
       this.planImplementation(issue),
       this.contextBuilder.detectDependencies(issue),
       this.contextBuilder.identifyFiles(issue),
-    ]);
+    ];
 
-    const complexity = await this.estimateComplexity(issue);
-    const risks = await this.assessRisks(issue, complexity);
+    const complexity = this.estimateComplexity(issue);
+    const risks = this.assessRisks(issue, complexity);
     const recommendedAgent = this.classifyRecommendedAgent(issue, complexity);
     const estimatedDuration = this.calculateDuration(complexity, issue.estimate ?? 0, steps.length);
-    const requiresArchitectureReview = complexity === Complexity.HIGH || complexity === Complexity.VERY_HIGH;
+    const requiresArchitectureReview =
+      complexity === Complexity.HIGH || complexity === Complexity.VERY_HIGH;
     const confidence = this.computeConfidence(issue, dependencies.length, steps.length);
 
     const plan = ExecutionPlan.create({
@@ -55,11 +59,16 @@ export class PlannerServiceImpl implements PlannerService {
       requiresArchitectureReview,
     });
 
-    this.logger.info('Analysis complete', { issueId: issue.id, complexity, recommendedAgent, estimatedDuration });
+    this.logger.info('Analysis complete', {
+      issueId: issue.id,
+      complexity,
+      recommendedAgent,
+      estimatedDuration,
+    });
     return plan;
   }
 
-  async selectAgent(issue: Issue, _plan: ExecutionPlan, availableAgents: AgentInfo[]): Promise<string> {
+  selectAgent(issue: Issue, _plan: ExecutionPlan, availableAgents: AgentInfo[]): string {
     const enabledAgents = availableAgents.filter((a) => a.enabled);
     if (enabledAgents.length === 0) {
       this.logger.error('No enabled agents available', undefined, { issueId: issue.id });
@@ -70,7 +79,7 @@ export class PlannerServiceImpl implements PlannerService {
     const title = issue.title.toLowerCase();
     const combined = `${title} ${desc}`;
 
-    const complexity = await this.estimateComplexity(issue);
+    const complexity = this.estimateComplexity(issue);
 
     const scores = enabledAgents.map((agent) => {
       let score = agent.priority;
@@ -81,7 +90,11 @@ export class PlannerServiceImpl implements PlannerService {
         }
       }
 
-      if (this.matchesKeywords(combined, REFACTOR_KEYWORDS) || complexity === Complexity.HIGH || complexity === Complexity.VERY_HIGH) {
+      if (
+        this.matchesKeywords(combined, REFACTOR_KEYWORDS) ||
+        complexity === Complexity.HIGH ||
+        complexity === Complexity.VERY_HIGH
+      ) {
         if (this.agentHasCapability(agent, 'architecture', 'refactoring', 'full-stack')) {
           score += 30;
         }
@@ -93,7 +106,9 @@ export class PlannerServiceImpl implements PlannerService {
         }
       }
 
-      const capabilityMatchCount = agent.capabilities.filter((c) => this.isCapabilityRelevant(c, combined)).length;
+      const capabilityMatchCount = agent.capabilities.filter((c) =>
+        this.isCapabilityRelevant(c, combined),
+      ).length;
       score += capabilityMatchCount * 5;
 
       return { agent, score };
@@ -105,17 +120,24 @@ export class PlannerServiceImpl implements PlannerService {
       throw new Error('No suitable agent found');
     }
 
-    this.logger.info('Agent selected', { issueId: issue.id, agent: best.agent.name, score: best.score });
+    this.logger.info('Agent selected', {
+      issueId: issue.id,
+      agent: best.agent.name,
+      score: best.score,
+    });
     return best.agent.name;
   }
 
-  async planImplementation(issue: Issue): Promise<string[]> {
+  planImplementation(issue: Issue): string[] {
     const desc = issue.description.trim();
     if (!desc) {
       return [`Implement: ${issue.title}`];
     }
 
-    const lines = desc.split('\n').map((l) => l.trim()).filter(Boolean);
+    const lines = desc
+      .split('\n')
+      .map((l) => l.trim())
+      .filter(Boolean);
 
     let hasStructuredSteps = false;
     for (const line of lines) {
@@ -135,7 +157,12 @@ export class PlannerServiceImpl implements PlannerService {
 
     const parts = desc.split(STEP_DELIMITERS).filter((s) => s.trim().length > 0);
     if (parts.length > 1) {
-      return parts.map((p) => p.trim().replace(/^\d+[.)]\s*/, '').replace(/^[-*]\s*/, ''));
+      return parts.map((p) =>
+        p
+          .trim()
+          .replace(/^\d+[.)]\s*/, '')
+          .replace(/^[-*]\s*/, ''),
+      );
     }
 
     const sentences = lines
@@ -149,7 +176,7 @@ export class PlannerServiceImpl implements PlannerService {
     return [`Implement: ${issue.title}`];
   }
 
-  async estimateComplexity(issue: Issue): Promise<Complexity> {
+  estimateComplexity(issue: Issue): Complexity {
     let score = 0;
     const descLength = issue.description.length;
 
@@ -180,7 +207,8 @@ export class PlannerServiceImpl implements PlannerService {
 
     const desc = issue.description.toLowerCase();
     if (this.matchesKeywords(desc, REFACTOR_KEYWORDS)) score += 2;
-    if (this.matchesKeywords(desc, /migration|breaking change|api change|database schema/i)) score += 2;
+    if (this.matchesKeywords(desc, /migration|breaking change|api change|database schema/i))
+      score += 2;
 
     if (score <= 2) return Complexity.LOW;
     if (score <= 5) return Complexity.MEDIUM;
@@ -198,11 +226,13 @@ export class PlannerServiceImpl implements PlannerService {
     return 'opencode';
   }
 
-  private async assessRisks(issue: Issue, complexity: Complexity): Promise<string[]> {
+  private assessRisks(issue: Issue, complexity: Complexity): string[] {
     const risks: string[] = [];
 
     if (issue.blockedByIssues.length > 0) {
-      risks.push(`Blocked by ${issue.blockedByIssues.length} issue(s): ${issue.blockedByIssues.join(', ')}`);
+      risks.push(
+        `Blocked by ${issue.blockedByIssues.length} issue(s): ${issue.blockedByIssues.join(', ')}`,
+      );
     }
 
     if (issue.blockingIssues.length > 0) {

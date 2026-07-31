@@ -35,15 +35,11 @@ describe('Issue', () => {
     });
 
     it('should throw on invalid props', () => {
-      expect(() =>
-        Issue.create({ ...baseProps, id: '' }),
-      ).toThrow();
+      expect(() => Issue.create({ ...baseProps, id: '' })).toThrow();
     });
 
     it('should throw with empty title', () => {
-      expect(() =>
-        Issue.create({ ...baseProps, title: '' }),
-      ).toThrow();
+      expect(() => Issue.create({ ...baseProps, title: '' })).toThrow();
     });
   });
 

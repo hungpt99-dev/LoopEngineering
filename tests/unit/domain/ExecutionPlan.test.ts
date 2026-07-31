@@ -25,27 +25,19 @@ describe('ExecutionPlan', () => {
     });
 
     it('should throw when estimatedDuration is negative', () => {
-      expect(() =>
-        ExecutionPlan.create({ ...baseProps, estimatedDuration: -5 }),
-      ).toThrow();
+      expect(() => ExecutionPlan.create({ ...baseProps, estimatedDuration: -5 })).toThrow();
     });
 
     it('should throw when confidence is out of range', () => {
-      expect(() =>
-        ExecutionPlan.create({ ...baseProps, confidence: 1.5 }),
-      ).toThrow();
+      expect(() => ExecutionPlan.create({ ...baseProps, confidence: 1.5 })).toThrow();
     });
 
     it('should throw when confidence is negative', () => {
-      expect(() =>
-        ExecutionPlan.create({ ...baseProps, confidence: -0.1 }),
-      ).toThrow();
+      expect(() => ExecutionPlan.create({ ...baseProps, confidence: -0.1 })).toThrow();
     });
 
     it('should throw when estimatedDuration is not positive', () => {
-      expect(() =>
-        ExecutionPlan.create({ ...baseProps, estimatedDuration: 0 }),
-      ).toThrow();
+      expect(() => ExecutionPlan.create({ ...baseProps, estimatedDuration: 0 })).toThrow();
     });
 
     it('should throw with invalid complexity', () => {

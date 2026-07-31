@@ -1,10 +1,8 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { container } from 'tsyringe';
-import {
-  AgentRegistry,
-  AGENT_REGISTRY,
-} from '../../infrastructure/agents/AgentRegistry.js';
+import type { IAgentRegistry } from '../../domain/interfaces/AgentRegistry.js';
+import { AGENT_REGISTRY } from '../../domain/interfaces/AgentRegistry.js';
 
 export function createAgentsCommand(): Command {
   const command = new Command('agents')
@@ -15,7 +13,7 @@ export function createAgentsCommand(): Command {
       console.log('');
 
       try {
-        const registry = container.resolve<AgentRegistry>(AGENT_REGISTRY);
+        const registry = container.resolve<IAgentRegistry>(AGENT_REGISTRY);
         const providers = registry.getAllProviders();
 
         if (providers.length === 0) {
@@ -28,7 +26,7 @@ export function createAgentsCommand(): Command {
           providers.map(async (provider) => ({
             provider,
             available: await provider.isAvailable(),
-            envIssues: await provider.validateEnvironment(),
+            envIssues: provider.validateEnvironment(),
           })),
         );
 

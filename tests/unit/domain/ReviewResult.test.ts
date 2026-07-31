@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { ReviewResult, ReviewDecision, ReviewIssue } from '../../../src/domain/entities/ReviewResult.js';
+import {
+  ReviewResult,
+  ReviewDecision,
+  ReviewIssue,
+} from '../../../src/domain/entities/ReviewResult.js';
 
 describe('ReviewResult', () => {
   describe('static factories', () => {
