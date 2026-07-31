@@ -34,12 +34,11 @@ export function extractAgentError(error: unknown, agentName: string): string {
   const codeStr = exitCode !== undefined ? ` (exit code ${exitCode})` : '';
 
   if (stderr.trim()) {
-    const summary = stderr.split('\n').slice(0, 10).join('\n').slice(0, 500);
+    const summary = stderr.trim().split('\n').slice(0, 8).join('\n').slice(0, 400);
     return `${agentName} failed${codeStr}: ${summary}`;
   }
 
-  const shortMessage = error.message.includes('\n') ? error.message.split('\n')[0]! : error.message;
-  return `${agentName} failed${codeStr}: ${shortMessage.slice(0, 300)}`;
+  return `${agentName} failed${codeStr}`;
 }
 
 export function getErrorOutput(error: unknown): string {

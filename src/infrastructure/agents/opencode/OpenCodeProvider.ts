@@ -56,7 +56,7 @@ export class OpenCodeProvider implements CodingAgentProvider {
         cwd: process.cwd(),
         timeout,
         stdin: 'ignore',
-        stderr: 'inherit',
+        stderr: ['pipe', 'inherit'],
         env: { ...process.env, CI: 'true' },
       });
 
